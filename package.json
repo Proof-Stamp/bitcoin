@@ -1,0 +1,17 @@
+{
+  "name": "@proofstamp/bitcoin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:interop": "node --test tests/opentimestamps-interop.test.mjs"
+  },
+  "devDependencies": {
+    "@lacrypta/typescript-opentimestamps": "0.1.0",
+    "@otskit/core": "0.2.0"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

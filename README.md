@@ -4,6 +4,14 @@ Work in progress.
 
 This repository contains the Bitcoin-backed ProofStamp implementation.
 
+The production browser application is intended to live at:
+
+```text
+https://ots.proofstamp.org/
+```
+
+It is designed as a static, browser-first Cloudflare Pages application.
+
 The architecture boundary is:
 
 **ProofStamp evidence format and UX → OpenTimestamps proof → Bitcoin**
@@ -17,6 +25,7 @@ ProofStamp is not a proprietary timestamp authority. The design target is local-
 - No ProofStamp account is required for the core flow.
 - No wallet, seed phrase, token, or gas interaction is required.
 - No ProofStamp proof database is required to verify a completed portable proof.
+- No `mailto:` or email handoff is part of this application.
 - Standard OpenTimestamps interoperability is preserved.
 - Pending proofs are never presented as already anchored in Bitcoin.
 - Product claims are limited to what the cryptographic evidence actually supports.
@@ -26,6 +35,7 @@ ProofStamp is not a proprietary timestamp authority. The design target is local-
 - [Implementation plan](docs/plan.md)
 - [ProofStamp Manifest v1](docs/proofstamp-manifest-v1.md)
 - [Threat model](docs/threat-model.md)
+- [Deployment and product boundary](docs/deployment-and-product-boundary.md)
 
 ## Development sequence
 
@@ -34,7 +44,7 @@ ProofStamp is not a proprietary timestamp authority. The design target is local-
 3. Local hashing and stamping flow.
 4. Pending-proof upgrade and Bitcoin verification.
 5. Parser, network, privacy, and failure hardening.
-6. Experimental release.
+6. Static Cloudflare Pages deployment and experimental release.
 
 No user-facing stamping flow should be added until standard `.ots` interoperability is demonstrated with canonical and independent implementations.
 

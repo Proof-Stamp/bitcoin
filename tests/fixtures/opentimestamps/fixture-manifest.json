@@ -1,0 +1,66 @@
+{
+  "source": {
+    "repository": "opentimestamps/opentimestamps-client",
+    "commit": "cd71c7609421bed2a07b9642a3c02a58c9fd2cdf"
+  },
+  "fixtures": [
+    {
+      "path": "hello-world.txt",
+      "upstreamPath": "examples/hello-world.txt",
+      "upstreamBlobSha": "980a0d5f19a64b4b30a87d4206aade58726b60e3",
+      "bytes": 13,
+      "sha256": "03ba204e50d126e4674c005e04d82e84c21366780af1f43bd54a37816b6ab340",
+      "kind": "source"
+    },
+    {
+      "path": "hello-world.txt.ots",
+      "upstreamPath": "examples/hello-world.txt.ots",
+      "upstreamBlobSha": "d8357eb50f9f26136a367bcc7e8365b2ddd7e0f5",
+      "bytes": 688,
+      "sha256": "be61ecb940db2e4a6f89fbed59c8d4f7f74fa756cbc1fad1ad7aabcb2bf59c30",
+      "kind": "valid-complete",
+      "sourceFile": "hello-world.txt"
+    },
+    {
+      "path": "incomplete.txt",
+      "upstreamPath": "examples/incomplete.txt",
+      "upstreamBlobSha": "e641709bfc1d2f7b1559aebe0ceb4ab397d7ce14",
+      "bytes": 63,
+      "sha256": "05c4f616a8e5310d19d938cfd769864d7f4ccdc2ca8b479b10af83564b097af9",
+      "kind": "source"
+    },
+    {
+      "path": "incomplete.txt.ots",
+      "upstreamPath": "examples/incomplete.txt.ots",
+      "upstreamBlobSha": "f49cd3595c50ed52d8ffada5f8f84ceb18f4c1ca",
+      "bytes": 175,
+      "sha256": "95673f2878cbcfdddded530bd2ad5f3fb04e13d2e659760d7c1386346fdd036c",
+      "kind": "valid-pending",
+      "sourceFile": "incomplete.txt"
+    },
+    {
+      "path": "invalid/bad-major-version.ots",
+      "upstreamPath": "examples/invalid/bad-major-version.ots",
+      "upstreamBlobSha": "6e6447317cef418b3f30965026a6c0152778091b",
+      "bytes": 221,
+      "sha256": "7e8c585cc6669f216cff6ee2a322cd2e8856d5d878f72aa2b89803188e37a747",
+      "kind": "invalid-structural"
+    },
+    {
+      "path": "invalid/exceeds-max-msg-length.ots",
+      "upstreamPath": "examples/invalid/exceeds-max-msg-length.ots",
+      "upstreamBlobSha": "fdb1ffaaee8c110a1f9b698b69db06a0e6a5dd55",
+      "bytes": 263,
+      "sha256": "0adc53bb9768ae961bd40861298af030e059f1915163abbe9177eac389a61905",
+      "kind": "invalid-semantic"
+    },
+    {
+      "path": "invalid/invalid-file-digest-type.ots",
+      "upstreamPath": "examples/invalid/invalid-file-digest-type.ots",
+      "upstreamBlobSha": "41ae5808dbc67d742af2f5c705407723eea81d02",
+      "bytes": 221,
+      "sha256": "68aa269dc4ff27a9b76891d9a4423408f10d0413c2c429f9237ce9bfa2ca690b",
+      "kind": "invalid-structural"
+    }
+  ]
+}
