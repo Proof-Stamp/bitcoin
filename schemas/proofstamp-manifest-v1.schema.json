@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProofStamp Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "hashAlgorithm", "evidence"],
+  "properties": {
+    "format": {
+      "const": "proofstamp-manifest"
+    },
+    "version": {
+      "const": 1
+    },
+    "hashAlgorithm": {
+      "const": "sha256"
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sha256", "size"],
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "$comment": "Runtime validation additionally limits this value to 255 UTF-8 bytes, rejects unpaired surrogates and disallowed control characters, and performs no Unicode normalization."
+          },
+          "mediaType": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 127,
+            "pattern": "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$",
+            "$comment": "Runtime validation measures the 127-byte limit in UTF-8. The pattern is ASCII, so character and byte counts coincide. Parameters are not permitted in v1."
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "$comment": "Runtime validation additionally limits this value to 4096 UTF-8 bytes, rejects unpaired surrogates and disallowed control characters, and performs no Unicode normalization."
+    }
+  },
+  "$comment": "Canonicalization, exact-byte import checks, the 8192-byte total canonical manifest limit, and domain-separated hashing are protocol rules defined in docs/proofstamp-manifest-v1.md and cannot be fully expressed by JSON Schema."
+}

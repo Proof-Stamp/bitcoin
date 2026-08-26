@@ -1,0 +1,59 @@
+[
+  {
+    "id": "minimal-empty-file",
+    "manifest": {
+      "format": "proofstamp-manifest",
+      "version": 1,
+      "hashAlgorithm": "sha256",
+      "evidence": [
+        {
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "size": 0
+        }
+      ]
+    },
+    "canonical": "{\"evidence\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"size\":0}],\"format\":\"proofstamp-manifest\",\"hashAlgorithm\":\"sha256\",\"version\":1}",
+    "canonicalUtf8Bytes": 169,
+    "commitmentSha256": "d91c6ea7c005fedfa14c7726495058e4ed8744a9a866583916fb8b543b3fc892"
+  },
+  {
+    "id": "contextual-pdf",
+    "manifest": {
+      "format": "proofstamp-manifest",
+      "version": 1,
+      "hashAlgorithm": "sha256",
+      "evidence": [
+        {
+          "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "size": 12345,
+          "name": "contract.pdf",
+          "mediaType": "application/pdf"
+        }
+      ],
+      "description": "Contract version sent for review"
+    },
+    "canonical": "{\"description\":\"Contract version sent for review\",\"evidence\":[{\"mediaType\":\"application/pdf\",\"name\":\"contract.pdf\",\"sha256\":\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\",\"size\":12345}],\"format\":\"proofstamp-manifest\",\"hashAlgorithm\":\"sha256\",\"version\":1}",
+    "canonicalUtf8Bytes": 274,
+    "commitmentSha256": "ce368aecac268d5af0db653cfc71b44ad29d0b15e2d6e61d2c8a0414d764633f"
+  },
+  {
+    "id": "unicode-metadata",
+    "manifest": {
+      "format": "proofstamp-manifest",
+      "version": 1,
+      "hashAlgorithm": "sha256",
+      "evidence": [
+        {
+          "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "size": 987654321,
+          "name": "résumé.pdf",
+          "mediaType": "application/pdf"
+        }
+      ],
+      "description": "Café 📄"
+    },
+    "canonical": "{\"description\":\"Café 📄\",\"evidence\":[{\"mediaType\":\"application/pdf\",\"name\":\"résumé.pdf\",\"sha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"size\":987654321}],\"format\":\"proofstamp-manifest\",\"hashAlgorithm\":\"sha256\",\"version\":1}",
+    "canonicalUtf8Bytes": 256,
+    "commitmentSha256": "5960bf7aed9503b5f1ffc42ab7140a936faf159bbd8a056734c42ff5715e3056"
+  }
+]
