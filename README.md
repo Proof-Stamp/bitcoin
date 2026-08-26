@@ -27,9 +27,14 @@ The browser flow now supports:
 3. deterministic ProofStamp Manifest v1 creation;
 4. domain-separated Manifest commitment;
 5. blinded submission to a fixed allowlist of OpenTimestamps calendars;
-6. preservation of a pending `.ots` proof and portable ProofStamp receipt.
+6. preservation of a pending `.ots` proof and portable ProofStamp receipt;
+7. reopening a saved receipt and validating its internal bindings locally;
+8. allowlisted OpenTimestamps proof upgrade;
+9. browser verification of Bitcoin attestations against self-authenticated raw block headers from Blockstream.
 
-A newly submitted proof is **pending**, not yet Bitcoin-verified. Upgrade and Bitcoin verification are the next implementation phase.
+A newly submitted proof is **pending**, not yet Bitcoin-verified. The browser can check again later and save an updated portable receipt and `.ots` proof.
+
+Browser Bitcoin verification is a convenience check, not independent Bitcoin consensus validation. The strongest verification path remains standard OpenTimestamps tooling backed by a locally controlled Bitcoin Core node.
 
 ## Core properties
 
@@ -37,6 +42,8 @@ A newly submitted proof is **pending**, not yet Bitcoin-verified. Upgrade and Bi
 - Files are hashed locally.
 - The source file and canonical manifest are not sent to calendars.
 - Calendar submission uses an OpenTimestamps-style randomised commitment derived from the Manifest commitment.
+- Saved receipts are read locally before any network request.
+- Imported proof data cannot introduce arbitrary network destinations.
 - No ProofStamp account is required for the core flow.
 - No wallet, seed phrase, token, or gas interaction is required.
 - No ProofStamp proof database is required to verify a completed portable proof.
@@ -51,6 +58,7 @@ A newly submitted proof is **pending**, not yet Bitcoin-verified. Upgrade and Bi
 - [ProofStamp Manifest v1](docs/proofstamp-manifest-v1.md)
 - [Local browser foundation](docs/local-browser-foundation.md)
 - [Pending OpenTimestamps submission](docs/pending-timestamp.md)
+- [Upgrade and Bitcoin verification](docs/upgrade-and-bitcoin-verification.md)
 - [Threat model](docs/threat-model.md)
 - [Deployment and product boundary](docs/deployment-and-product-boundary.md)
 

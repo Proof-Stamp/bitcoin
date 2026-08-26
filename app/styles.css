@@ -21,7 +21,9 @@ h1 { font-size: clamp(2rem, 6vw, 4rem); line-height: 1.02; letter-spacing: -.045
 .hero > p:last-child { max-width: 680px; font-size: 1.05rem; line-height: 1.6; color: #565656; }
 
 .card { background: #fff; border: 1px solid #deded9; border-radius: 18px; padding: 24px; margin-top: 18px; box-shadow: 0 8px 30px rgba(0,0,0,.035); }
+.verify-card { margin-top: 34px; }
 h2 { margin: 0 0 20px; font-size: 1.35rem; }
+.section-copy { color: #565656; line-height: 1.6; margin: -6px 0 22px; max-width: 700px; }
 .field { display: grid; gap: 8px; margin-bottom: 20px; font-weight: 650; }
 .field small, .privacy-note, .warning-note { color: #70706b; font-weight: 400; line-height: 1.45; }
 .warning-note { margin-top: 14px; color: #595955; }
@@ -35,7 +37,7 @@ button { border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 700; b
 button:hover { opacity: .88; }
 button:disabled { opacity: .45; cursor: wait; }
 button.secondary { background: #ecece8; color: #171717; }
-.status { min-height: 1.5em; margin: 16px 0 0; color: #555; }
+.status { min-height: 1.5em; margin: 16px 0 0; color: #555; line-height: 1.45; }
 .status.error { color: #9d1c1c; }
 
 .result-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -54,4 +56,6 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f7f7f4; borde
   .card { padding: 18px; border-radius: 14px; }
   .result-head { display: block; }
   .badge { display: inline-block; margin-bottom: 16px; }
+  button { width: 100%; }
+  .actions button { flex: 1 1 100%; }
 }

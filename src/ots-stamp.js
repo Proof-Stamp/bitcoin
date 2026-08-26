@@ -7,13 +7,9 @@ import {
   hexToBytes,
   makeMerkleTree,
 } from '@otskit/core'
+import { STAMP_CALENDARS } from './network-policy.js'
 
-export const APPROVED_OTS_CALENDARS = Object.freeze([
-  'https://a.pool.opentimestamps.org',
-  'https://b.pool.opentimestamps.org',
-  'https://a.pool.eternitywall.com',
-])
-
+export const APPROVED_OTS_CALENDARS = STAMP_CALENDARS
 export const OTS_CALENDAR_RESPONSE_LIMIT_BYTES = 10_000
 export const OTS_CALENDAR_TIMEOUT_MS = 8_000
 export const OTS_NONCE_BYTES = 16
@@ -125,8 +121,6 @@ export async function createPendingTimestamp(
   const commitment = hexToBytes(commitmentHex)
   const detached = DetachedTimestampFile.fromHash(new OpSHA256(), commitment)
 
-  // OpenTimestamps privacy blinding: calendars receive SHA256(commitment || random nonce),
-  // not the raw ProofStamp Manifest commitment.
   const nonceAppended = detached.timestamp.add(new OpAppend(randomNonce(randomValues)))
   const blinded = nonceAppended.add(new OpSHA256())
   const merkleTip = makeMerkleTree([blinded])
