@@ -29,17 +29,8 @@ test('canonical fixture corpus matches pinned size and SHA-256 metadata', async 
 });
 
 for (const fixture of fixtureManifest.fixtures.filter((item) => item.kind.startsWith('valid-'))) {
-  test(`standard OTS fixture round-trips through both candidate implementations: ${fixture.path}`, async () => {
+  test(`OTSkit preserves canonical bytes exactly: ${fixture.path}`, async () => {
     const bytes = await loadBytes(fixture.path);
-
-    const typedTimestamp = readOpenTimestamps(bytes);
-    const typedRoundTrip = writeOpenTimestamps(typedTimestamp);
-    assert.deepEqual(
-      Buffer.from(typedRoundTrip),
-      Buffer.from(bytes),
-      'La Crypta TypeScript OpenTimestamps changed canonical bytes on round-trip',
-    );
-
     const otskitTimestamp = DetachedTimestampFile.deserialize(bytes);
     const otskitRoundTrip = otskitTimestamp.serializeToBytes();
     assert.deepEqual(
@@ -47,6 +38,46 @@ for (const fixture of fixtureManifest.fixtures.filter((item) => item.kind.starts
       Buffer.from(bytes),
       'OTSkit changed canonical bytes on round-trip',
     );
+  });
+
+  test(`La Crypta TypeScript parser/serializer remains interoperable: ${fixture.path}`, async () => {
+    const bytes = await loadBytes(fixture.path);
+    const typedTimestamp = readOpenTimestamps(bytes);
+    const typedRoundTrip = writeOpenTimestamps(typedTimestamp);
+
+    if (fixture.kind === 'valid-complete') {
+      assert.deepEqual(
+        Buffer.from(typedRoundTrip),
+        Buffer.from(bytes),
+        'La Crypta TypeScript OpenTimestamps changed completed canonical bytes on round-trip',
+      );
+    } else {
+      // The published 0.1.0 TypeScript implementation parses pending calendar
+      // strings into JavaScript URL objects and writes them with URL.toString().
+      // For an origin-only calendar URL, JavaScript normalizes the value by
+      // adding a trailing slash. That changes the detached proof bytes without
+      // changing the file digest or the parsed proof semantics.
+      const typedRoundTripAgain = writeOpenTimestamps(readOpenTimestamps(typedRoundTrip));
+      assert.deepEqual(
+        Buffer.from(typedRoundTripAgain),
+        Buffer.from(typedRoundTrip),
+        'TypeScript pending-proof serialization was not stable after URL normalization',
+      );
+
+      const otskitNormalized = DetachedTimestampFile.deserialize(typedRoundTrip);
+      assert.deepEqual(
+        Buffer.from(otskitNormalized.serializeToBytes()),
+        Buffer.from(typedRoundTrip),
+        'OTSkit did not preserve the TypeScript-normalized pending proof',
+      );
+
+      const originalOtskit = DetachedTimestampFile.deserialize(bytes);
+      assert.deepEqual(
+        Buffer.from(otskitNormalized.fileDigest()),
+        Buffer.from(originalOtskit.fileDigest()),
+        'Pending URL normalization changed the detached file digest',
+      );
+    }
   });
 
   test(`standard OTS file digest matches its canonical source file: ${fixture.path}`, async () => {
