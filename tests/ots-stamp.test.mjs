@@ -14,6 +14,7 @@ import {
   createPendingTimestamp,
 } from '../src/ots-stamp.js'
 import { createPendingReceiptV1 } from '../src/pending-receipt-v1.js'
+import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
 const COMMITMENT = '4a44dc15364204a80fe80e9039455cc1608281820fe2b24c6f9b7a82340e05f0'
 
@@ -181,19 +182,19 @@ test('pending receipt embeds the exact .ots proof and preserves the local eviden
   )
 })
 
-test('static build uses only the approved calendar origins', async () => {
+test('static build vendors OTSkit and exposes only the reviewed browser network origins', async () => {
   const headers = await readFile(new URL('../app/_headers', import.meta.url), 'utf8')
   const connect = headers.match(/connect-src ([^;]+);/)?.[1]
-  assert.equal(
-    connect,
-    'https://a.pool.opentimestamps.org https://b.pool.opentimestamps.org https://a.pool.eternitywall.com',
-  )
+  assert.equal(connect, BROWSER_CONNECT_ORIGINS.join(' '))
   assert.ok(!connect.includes("'self'"))
   assert.ok(!connect.includes('https: '))
 
   const builtStamp = await readFile(new URL('../dist/ots-stamp.js', import.meta.url), 'utf8')
+  const builtUpgrade = await readFile(new URL('../dist/ots-upgrade-verify.js', import.meta.url), 'utf8')
   const builtCore = await readFile(new URL('../dist/vendor/otskit-core.js', import.meta.url), 'utf8')
   assert.ok(builtStamp.includes("from './vendor/otskit-core.js'"))
+  assert.ok(builtUpgrade.includes("from './vendor/otskit-core.js'"))
   assert.ok(!builtStamp.includes("from '@otskit/core'"))
+  assert.ok(!builtUpgrade.includes("from '@otskit/core'"))
   assert.ok(builtCore.length > 1000)
 })
