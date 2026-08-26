@@ -59,6 +59,8 @@ const saveCheckedProofButton = document.querySelector('#save-checked-proof')
 let prepared = null
 let pending = null
 let checked = null
+let sourceEpoch = 0
+let activeVerificationRun = null
 
 function setStatus(message, isError = false) {
   status.textContent = message
@@ -98,12 +100,30 @@ function receiptBaseName(name) {
   return safeBaseName(String(name || 'proofstamp').replace(/\.proofstamp-receipt\.json$/i, '').replace(/\.json$/i, ''))
 }
 
+function clearChecked(source = null) {
+  if (source && checked?.source !== source) return
+  checked = null
+  verificationResult.hidden = true
+}
+
+function beginVerificationRun(source) {
+  const token = Object.freeze({ source, id: Symbol(source) })
+  activeVerificationRun = token
+  return token
+}
+
+function verificationRunIsCurrent(token) {
+  return activeVerificationRun === token
+}
+
 function invalidatePrepared() {
-  if (!prepared && !pending) return
+  sourceEpoch += 1
   prepared = null
   pending = null
   result.hidden = true
   timestampResult.hidden = true
+  if (activeVerificationRun?.source === 'current') activeVerificationRun = null
+  clearChecked('current')
   setStatus('The inputs changed. Run the local checks again before submitting.')
 }
 
@@ -116,9 +136,9 @@ function resetVerificationRows() {
   verifiedBlockTime.textContent = ''
 }
 
-function renderChecked(resultPackage) {
+function renderChecked(resultPackage, source) {
   const { receipt, verification, upgrade } = resultPackage
-  checked = resultPackage
+  checked = Object.freeze({ ...resultPackage, source })
   verifiedCommitment.textContent = receipt.manifestCommitmentSha256
   resetVerificationRows()
 
@@ -155,27 +175,32 @@ async function checkReceiptProof(receipt, proofBytes, baseName) {
     verification = await verifyBitcoinAttestations(upgrade.proofBytes)
   }
   const updatedReceipt = await updateReceiptWithProof(receipt, upgrade.proofBytes, verification)
-  const resultPackage = Object.freeze({
+  return Object.freeze({
     receipt: updatedReceipt,
     proofBytes: upgrade.proofBytes,
     verification,
     upgrade,
     baseName,
   })
-  renderChecked(resultPackage)
-  return resultPackage
 }
 
 fileInput.addEventListener('change', invalidatePrepared)
 descriptionInput.addEventListener('input', invalidatePrepared)
 includeMetadataInput.addEventListener('change', invalidatePrepared)
+savedReceiptInput.addEventListener('change', () => {
+  if (activeVerificationRun?.source === 'saved') activeVerificationRun = null
+  clearChecked('saved')
+  setSavedStatus('')
+})
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault()
   result.hidden = true
   timestampResult.hidden = true
+  clearChecked('current')
   prepared = null
   pending = null
+  activeVerificationRun = null
   setStatus('')
 
   const [file] = fileInput.files
@@ -188,14 +213,19 @@ form.addEventListener('submit', async (event) => {
     return
   }
 
+  const epoch = ++sourceEpoch
+  const description = descriptionInput.value
+  const includeMetadata = includeMetadataInput.checked
   prepareButton.disabled = true
   fileInput.disabled = true
+  descriptionInput.disabled = true
+  includeMetadataInput.disabled = true
   try {
     setStatus('Reading the file locally and running two independent SHA-256 checks…')
     const agreement = await dualSha256File(file)
 
     const evidence = { sha256: agreement.sha256, size: file.size }
-    if (includeMetadataInput.checked) {
+    if (includeMetadata) {
       if (file.name) evidence.name = file.name
       if (file.type) evidence.mediaType = file.type
     }
@@ -206,11 +236,12 @@ form.addEventListener('submit', async (event) => {
       hashAlgorithm: 'sha256',
       evidence: [evidence],
     }
-    if (descriptionInput.value.length > 0) manifest.description = descriptionInput.value
+    if (description.length > 0) manifest.description = description
 
     const canonical = canonicalManifestText(manifest)
     const commitment = await manifestCommitmentHex(manifest)
     const draft = await createLocalDraftV1(manifest, agreement)
+    if (epoch !== sourceEpoch) return
 
     prepared = { file, manifest, canonical, commitment, draft }
     fileSha.textContent = agreement.sha256
@@ -220,20 +251,25 @@ form.addEventListener('submit', async (event) => {
     submitTimestampButton.disabled = false
     setStatus('Both local SHA-256 methods agree. Nothing has been submitted yet.')
   } catch (error) {
-    setStatus(error instanceof Error ? error.message : 'Local preparation failed.', true)
+    if (epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Local preparation failed.', true)
   } finally {
     prepareButton.disabled = false
     fileInput.disabled = false
+    descriptionInput.disabled = false
+    includeMetadataInput.disabled = false
   }
 })
 
 submitTimestampButton.addEventListener('click', async () => {
   if (!prepared || pending) return
+  const epoch = sourceEpoch
+  const preparedSnapshot = prepared
   submitTimestampButton.disabled = true
   try {
     setStatus('Submitting a blinded Manifest commitment to the approved OpenTimestamps calendars…')
-    const stamp = await createPendingTimestamp(prepared.commitment)
-    const receipt = await createPendingReceiptV1(prepared.draft, stamp)
+    const stamp = await createPendingTimestamp(preparedSnapshot.commitment)
+    const receipt = await createPendingReceiptV1(preparedSnapshot.draft, stamp)
+    if (epoch !== sourceEpoch || prepared !== preparedSnapshot) return
     pending = { stamp, receipt }
 
     calendarCount.textContent = `${stamp.calendarsAccepted.length} of ${stamp.calendarsAttempted.length}`
@@ -247,19 +283,26 @@ submitTimestampButton.addEventListener('click', async () => {
       ? 'Timestamp submitted with reduced calendar redundancy. This is not Bitcoin confirmation yet.'
       : 'Timestamp submitted. This is not Bitcoin confirmation yet.')
   } catch (error) {
-    submitTimestampButton.disabled = false
-    setStatus(error instanceof Error ? error.message : 'Timestamp submission failed.', true)
+    if (epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Timestamp submission failed.', true)
+  } finally {
+    if (epoch === sourceEpoch && prepared === preparedSnapshot && !pending) submitTimestampButton.disabled = false
   }
 })
 
 checkCurrentProofButton.addEventListener('click', async () => {
   if (!prepared || !pending) return
+  const epoch = sourceEpoch
+  const preparedSnapshot = prepared
+  const pendingSnapshot = pending
+  const run = beginVerificationRun('current')
   checkCurrentProofButton.disabled = true
   try {
     setStatus('Checking approved calendars for an upgrade and verifying any Bitcoin attestation…')
-    const checkedCurrent = await checkReceiptProof(pending.receipt, pending.stamp.proofBytes, safeBaseName(prepared.file.name))
+    const checkedCurrent = await checkReceiptProof(pendingSnapshot.receipt, pendingSnapshot.stamp.proofBytes, safeBaseName(preparedSnapshot.file.name))
+    if (!verificationRunIsCurrent(run) || epoch !== sourceEpoch || prepared !== preparedSnapshot || pending !== pendingSnapshot) return
+    renderChecked(checkedCurrent, 'current')
     pending = {
-      stamp: { ...pending.stamp, proofBytes: checkedCurrent.proofBytes },
+      stamp: { ...pendingSnapshot.stamp, proofBytes: checkedCurrent.proofBytes },
       receipt: checkedCurrent.receipt,
     }
     proofSha.textContent = checkedCurrent.receipt.openTimestamps.proofSha256
@@ -270,15 +313,17 @@ checkCurrentProofButton.addEventListener('click', async () => {
       setStatus('Still pending. No verified Bitcoin attestation is available yet.')
     }
   } catch (error) {
-    setStatus(error instanceof Error ? error.message : 'Bitcoin status check failed.', true)
+    if (verificationRunIsCurrent(run) && epoch === sourceEpoch) {
+      setStatus(error instanceof Error ? error.message : 'Bitcoin status check failed.', true)
+    }
   } finally {
+    if (verificationRunIsCurrent(run)) activeVerificationRun = null
     checkCurrentProofButton.disabled = false
   }
 })
 
 checkSavedProofButton.addEventListener('click', async () => {
-  verificationResult.hidden = true
-  checked = null
+  clearChecked('saved')
   setSavedStatus('')
   const [receiptFile] = savedReceiptInput.files
   if (!receiptFile) {
@@ -290,19 +335,24 @@ checkSavedProofButton.addEventListener('click', async () => {
     return
   }
 
+  const run = beginVerificationRun('saved')
   checkSavedProofButton.disabled = true
   savedReceiptInput.disabled = true
   try {
     setSavedStatus('Validating the receipt locally…')
     const validated = await parseAndValidateProofStampReceiptText(await receiptFile.text())
+    if (!verificationRunIsCurrent(run)) return
     setSavedStatus('Receipt bindings are valid. Checking approved calendars and Bitcoin status…')
     const resultPackage = await checkReceiptProof(validated.receipt, validated.proofBytes, receiptBaseName(receiptFile.name))
+    if (!verificationRunIsCurrent(run)) return
+    renderChecked(resultPackage, 'saved')
     setSavedStatus(resultPackage.verification
       ? 'Receipt is internally consistent and its Bitcoin attestation verified through the browser check.'
       : 'Receipt is internally consistent. The OpenTimestamps proof is still pending.')
   } catch (error) {
-    setSavedStatus(error instanceof Error ? error.message : 'Receipt check failed.', true)
+    if (verificationRunIsCurrent(run)) setSavedStatus(error instanceof Error ? error.message : 'Receipt check failed.', true)
   } finally {
+    if (verificationRunIsCurrent(run)) activeVerificationRun = null
     checkSavedProofButton.disabled = false
     savedReceiptInput.disabled = false
   }
