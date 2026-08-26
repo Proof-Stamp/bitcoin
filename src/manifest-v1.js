@@ -170,6 +170,9 @@ export function parseCanonicalManifestBytes(input) {
   if (bytes.byteLength === 0 || bytes.byteLength > LIMITS.canonicalManifestBytes) {
     fail(`input must be between 1 and ${LIMITS.canonicalManifestBytes} bytes`);
   }
+  if (bytes.byteLength >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    fail('UTF-8 BOM is not permitted');
+  }
 
   let text;
   try {
@@ -177,7 +180,6 @@ export function parseCanonicalManifestBytes(input) {
   } catch {
     fail('input is not valid UTF-8');
   }
-  if (text.charCodeAt(0) === 0xfeff) fail('UTF-8 BOM is not permitted');
 
   let parsed;
   try {
