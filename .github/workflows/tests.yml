@@ -60,3 +60,23 @@ jobs:
           fi
           python -m pip install --disable-pip-version-check "git+https://github.com/opentimestamps/opentimestamps-client.git@cd71c7609421bed2a07b9642a3c02a58c9fd2cdf"
           bash scripts/check-python-interop.sh
+
+      - name: Use Node.js 22 for normalized pending proof generation
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Check TypeScript-normalized pending proof with canonical Python client
+        shell: bash
+        run: |
+          if [ ! -f package.json ] || [ ! -f scripts/generate-typescript-normalized-pending.mjs ]; then
+            echo "No normalized pending-proof interoperability check yet; CI bootstrap only."
+            exit 0
+          fi
+          npm install --ignore-scripts --no-audit --no-fund
+          output="$(mktemp --suffix=.ots)"
+          trap 'rm -f "$output"' EXIT
+          node scripts/generate-typescript-normalized-pending.mjs \
+            tests/fixtures/opentimestamps/incomplete.txt.ots \
+            "$output"
+          ots info "$output" >/dev/null
