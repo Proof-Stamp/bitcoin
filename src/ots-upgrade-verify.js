@@ -11,6 +11,9 @@ import { BLOCKSTREAM_ESPLORA_API, UPGRADE_CALENDARS } from './network-policy.js'
 
 export const MAX_IMPORTED_OTS_BYTES = 128 * 1024
 export const MAX_PROOF_ATTESTATIONS = 128
+export const MAX_PROOF_TREE_DEPTH = 64
+export const MAX_PROOF_OPERATIONS = 1024
+export const MAX_PROOF_NODES = 2048
 export const MAX_UPGRADE_QUERIES = 16
 export const MAX_BITCOIN_ATTESTATIONS = 8
 export const NETWORK_RESPONSE_LIMIT_BYTES = 10_000
@@ -34,6 +37,34 @@ function assertProofBytes(proofBytes) {
   }
 }
 
+function assertProofComplexity(timestamp) {
+  let nodes = 0
+  let operations = 0
+  let maximumDepth = 0
+  const stack = [{ stamp: timestamp, depth: 0 }]
+
+  while (stack.length > 0) {
+    const { stamp, depth } = stack.pop()
+    nodes += 1
+    if (nodes > MAX_PROOF_NODES) {
+      throw new Error(`OpenTimestamps proof exceeds the ${MAX_PROOF_NODES}-node limit`)
+    }
+    if (depth > MAX_PROOF_TREE_DEPTH) {
+      throw new Error(`OpenTimestamps proof exceeds the ${MAX_PROOF_TREE_DEPTH}-level application depth limit`)
+    }
+    maximumDepth = Math.max(maximumDepth, depth)
+
+    const branches = stamp.branches
+    operations += branches.length
+    if (operations > MAX_PROOF_OPERATIONS) {
+      throw new Error(`OpenTimestamps proof exceeds the ${MAX_PROOF_OPERATIONS}-operation limit`)
+    }
+    for (const { stamp: child } of branches) stack.push({ stamp: child, depth: depth + 1 })
+  }
+
+  return Object.freeze({ nodes, operations, maximumDepth })
+}
+
 function parseProof(proofBytes) {
   assertProofBytes(proofBytes)
   let detached
@@ -45,11 +76,13 @@ function parseProof(proofBytes) {
   if (!(detached.fileHashOp instanceof OpSHA256)) {
     throw new Error('ProofStamp verification supports SHA-256 detached proofs only')
   }
+
+  const complexity = assertProofComplexity(detached.timestamp)
   const attestations = detached.timestamp.allAttestations()
   if (attestations.length > MAX_PROOF_ATTESTATIONS) {
     throw new Error(`OpenTimestamps proof exceeds the ${MAX_PROOF_ATTESTATIONS}-attestation limit`)
   }
-  return detached
+  return { detached, attestations, complexity }
 }
 
 function approvedCalendarOrigin(uri) {
@@ -130,14 +163,21 @@ async function queryCalendar(origin, digest, fetchImpl, timeoutMs) {
 }
 
 export function inspectOpenTimestampsProof(proofBytes) {
-  const detached = parseProof(proofBytes)
-  const attestations = detached.timestamp.allAttestations()
+  const { detached, attestations, complexity } = parseProof(proofBytes)
+  const bitcoinHeights = attestations
+    .filter(({ attestation }) => attestation.kind === 'bitcoin')
+    .map(({ attestation }) => attestation.height)
+    .sort((a, b) => a - b)
   return Object.freeze({
     fileDigestSha256: bytesToHex(detached.fileDigest()),
     pendingCount: attestations.filter(({ attestation }) => attestation.kind === 'pending').length,
-    bitcoinCount: attestations.filter(({ attestation }) => attestation.kind === 'bitcoin').length,
+    bitcoinCount: bitcoinHeights.length,
+    bitcoinHeights: Object.freeze(bitcoinHeights),
     unknownCount: attestations.filter(({ attestation }) => attestation.kind === 'unknown').length,
-    state: detached.timestamp.hasBitcoinAttestation() ? 'bitcoin-attested' : 'pending',
+    operationCount: complexity.operations,
+    treeDepth: complexity.maximumDepth,
+    nodeCount: complexity.nodes,
+    state: bitcoinHeights.length > 0 ? 'bitcoin-attested' : 'pending',
   })
 }
 
@@ -146,7 +186,7 @@ export async function upgradeOpenTimestampsProof(
   { fetchImpl = globalThis.fetch, timeoutMs = NETWORK_TIMEOUT_MS } = {},
 ) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new RangeError('Invalid network timeout')
-  const detached = parseProof(proofBytes)
+  const { detached } = parseProof(proofBytes)
   const before = detached.serializeToBytes()
 
   if (detached.timestamp.hasBitcoinAttestation()) {
@@ -258,8 +298,8 @@ export async function verifyBitcoinAttestations(
   } = {},
 ) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new RangeError('Invalid network timeout')
-  const detached = parseProof(proofBytes)
-  const bitcoin = detached.timestamp.allAttestations().filter(({ attestation }) => attestation.kind === 'bitcoin')
+  const { detached, attestations } = parseProof(proofBytes)
+  const bitcoin = attestations.filter(({ attestation }) => attestation.kind === 'bitcoin')
   if (bitcoin.length === 0) throw new Error('No Bitcoin attestation is present yet')
   if (bitcoin.length > MAX_BITCOIN_ATTESTATIONS) {
     throw new Error(`OpenTimestamps proof exceeds the ${MAX_BITCOIN_ATTESTATIONS}-Bitcoin-attestation verification limit`)
