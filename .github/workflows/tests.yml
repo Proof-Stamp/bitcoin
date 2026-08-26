@@ -49,32 +49,37 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Run canonical Python interoperability tests when present
+      - name: Install canonical Python OpenTimestamps client
         shell: bash
-        run: |
-          if [ ! -f scripts/check-python-interop.sh ]; then
-            echo "No canonical Python interop script yet; CI bootstrap only."
-            exit 0
-          fi
-          python -m pip install --disable-pip-version-check "git+https://github.com/opentimestamps/opentimestamps-client.git@cd71c7609421bed2a07b9642a3c02a58c9fd2cdf"
-          bash scripts/check-python-interop.sh
+        run: python -m pip install --disable-pip-version-check "git+https://github.com/opentimestamps/opentimestamps-client.git@cd71c7609421bed2a07b9642a3c02a58c9fd2cdf"
 
-      - name: Use Node.js 22 for normalized pending proof generation
+      - name: Run canonical Python interoperability tests
+        shell: bash
+        run: bash scripts/check-python-interop.sh
+
+      - name: Use Node.js 22 for generated proof checks
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
 
+      - name: Install JavaScript dependencies for generated proofs
+        shell: bash
+        run: npm install --ignore-scripts --no-audit --no-fund
+
       - name: Check TypeScript-normalized pending proof with canonical Python client
         shell: bash
         run: |
-          if [ ! -f package.json ] || [ ! -f scripts/generate-typescript-normalized-pending.mjs ]; then
-            echo "No normalized pending-proof interoperability check yet; CI bootstrap only."
-            exit 0
-          fi
-          npm install --ignore-scripts --no-audit --no-fund
           output="$(mktemp --suffix=.ots)"
           trap 'rm -f "$output"' EXIT
           node scripts/generate-typescript-normalized-pending.mjs \
             tests/fixtures/opentimestamps/incomplete.txt.ots \
             "$output"
+          ots info "$output" >/dev/null
+
+      - name: Check ProofStamp-generated pending proof with canonical Python client
+        shell: bash
+        run: |
+          output="$(mktemp --suffix=.ots)"
+          trap 'rm -f "$output"' EXIT
+          node scripts/generate-proofstamp-pending-fixture.mjs "$output"
           ots info "$output" >/dev/null

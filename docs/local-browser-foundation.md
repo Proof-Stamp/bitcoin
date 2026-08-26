@@ -1,8 +1,8 @@
 # Local browser foundation
 
-Status: pre-network implementation gate
+Status: local preparation gate implemented
 
-This phase implements the local preparation step for ProofStamp via Bitcoin. It intentionally stops before OpenTimestamps calendar submission.
+This document defines the local preparation step for ProofStamp via Bitcoin. The local gate still runs before any OpenTimestamps calendar submission. Networked pending-proof creation is defined separately in [Pending OpenTimestamps submission](pending-timestamp.md).
 
 ## Security boundary
 
@@ -48,10 +48,8 @@ The user may save a `proofstamp-local-draft` JSON object. It preserves:
 
 Its status is always `local-only-not-timestamped`. It contains no OpenTimestamps proof and must never be presented as timestamp evidence.
 
-## Network policy
+## Network transition
 
-This phase performs no calendar submission, Bitcoin lookup, analytics request, account call, email handoff, or ProofStamp backend request.
+The local preparation code itself performs no network request. After the local gate succeeds, the user may explicitly start the separate OpenTimestamps submission step.
 
-The static application's CSP sets `connect-src 'none'`. WebAssembly is embedded in generated JavaScript at build time, so the application does not fetch a `.wasm` file at runtime.
-
-The next phase may relax `connect-src` only to an explicit reviewed calendar allowlist.
+That step is constrained to the exact reviewed calendar allowlist and CSP documented in [Pending OpenTimestamps submission](pending-timestamp.md). No source-file bytes or canonical manifest bytes are sent during that transition.
