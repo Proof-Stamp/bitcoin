@@ -124,7 +124,7 @@ function invalidatePrepared() {
   timestampResult.hidden = true
   if (activeVerificationRun?.source === 'current') activeVerificationRun = null
   clearChecked('current')
-  setStatus('The inputs changed. Run the local checks again before submitting.')
+  setStatus('The inputs changed. Check the file locally again before submitting.')
 }
 
 function resetVerificationRows() {
@@ -155,7 +155,7 @@ function renderChecked(resultPackage, source) {
     verificationNote.textContent = 'The proof has a Bitcoin attestation that matches the fetched raw block header. The explorer supplies the current best-chain block hash at that height; ProofStamp does not independently run Bitcoin consensus in the browser.'
   } else {
     verificationKicker.textContent = 'Proof checked'
-    verificationBadge.textContent = 'Pending'
+    verificationBadge.textContent = 'Waiting for Bitcoin'
     verificationMethod.textContent = 'OpenTimestamps calendar upgrade check'
     const skipped = upgrade.skippedUnapprovedCalendars.length
     const failed = upgrade.failedCalendars.length
@@ -274,14 +274,14 @@ submitTimestampButton.addEventListener('click', async () => {
 
     calendarCount.textContent = `${stamp.calendarsAccepted.length} of ${stamp.calendarsAttempted.length}`
     proofSha.textContent = receipt.openTimestamps.proofSha256
-    timestampBadge.textContent = 'Pending'
+    timestampBadge.textContent = 'Waiting for Bitcoin'
     timestampNote.textContent = stamp.redundancy === 'reduced'
-      ? 'Only one calendar accepted this submission. The proof is valid but has reduced upgrade redundancy. Keep the pending proof.'
-      : 'The timestamp is pending Bitcoin confirmation. Keep the receipt and .ots proof so it can be upgraded later.'
+      ? 'Only one calendar accepted this submission. The proof is valid but has reduced upgrade redundancy. Keep the receipt and .ots proof.'
+      : 'The timestamp proof is waiting for a Bitcoin attestation. Keep the receipt and .ots proof so it can be upgraded later.'
     timestampResult.hidden = false
     setStatus(stamp.redundancy === 'reduced'
-      ? 'Timestamp submitted with reduced calendar redundancy. This is not Bitcoin confirmation yet.'
-      : 'Timestamp submitted. This is not Bitcoin confirmation yet.')
+      ? 'Timestamp request accepted with reduced calendar redundancy. It is still waiting for Bitcoin.'
+      : 'Timestamp request accepted. It is now waiting for Bitcoin.')
   } catch (error) {
     if (epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Timestamp submission failed.', true)
   } finally {
@@ -310,7 +310,8 @@ checkCurrentProofButton.addEventListener('click', async () => {
       timestampBadge.textContent = 'Bitcoin attestation verified'
       setStatus('Bitcoin attestation verified in the browser using a self-authenticated raw block header.')
     } else {
-      setStatus('Still pending. No verified Bitcoin attestation is available yet.')
+      timestampBadge.textContent = 'Waiting for Bitcoin'
+      setStatus('Still waiting for Bitcoin. No verified Bitcoin attestation is available yet.')
     }
   } catch (error) {
     if (verificationRunIsCurrent(run) && epoch === sourceEpoch) {
@@ -348,7 +349,7 @@ checkSavedProofButton.addEventListener('click', async () => {
     renderChecked(resultPackage, 'saved')
     setSavedStatus(resultPackage.verification
       ? 'Receipt is internally consistent and its Bitcoin attestation verified through the browser check.'
-      : 'Receipt is internally consistent. The OpenTimestamps proof is still pending.')
+      : 'Receipt is internally consistent. The proof is still waiting for Bitcoin.')
   } catch (error) {
     if (verificationRunIsCurrent(run)) setSavedStatus(error instanceof Error ? error.message : 'Receipt check failed.', true)
   } finally {
