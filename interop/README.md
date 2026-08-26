@@ -7,10 +7,13 @@ The purpose is to prove standard `.ots` compatibility before any browser stampin
 ## Upstream implementations pinned for the spike
 
 - Canonical Python client: `opentimestamps/opentimestamps-client` at `cd71c7609421bed2a07b9642a3c02a58c9fd2cdf`
-- OpenTimestamps TypeScript client: `opentimestamps/typescript-opentimestamps` at `12ba7b2c4f4cd1b8ce52d2c17be5efedca3bceab`, npm package `@opentimestamps/typescript-opentimestamps` `0.1.0`
+- Current OpenTimestamps TypeScript source: `opentimestamps/typescript-opentimestamps` at `12ba7b2c4f4cd1b8ce52d2c17be5efedca3bceab`
+- Published TypeScript test oracle: `@lacrypta/typescript-opentimestamps` `0.1.0`
 - OTSkit core: `OTSkit/OTSkit-core` at `f0065a640db8b2ddbd7cb459c7f0cd4370693bd0`, npm package `@otskit/core` `0.2.0`
 
-The TypeScript OpenTimestamps package and OTSkit are development-only interoperability oracles in this phase. Neither is selected as the production ProofStamp protocol dependency by this spike.
+The current OpenTimestamps TypeScript repository declares package name `@opentimestamps/typescript-opentimestamps`, but that package name is not published in the npm registry. The published `0.1.0` package remains under the project's earlier `@lacrypta/typescript-opentimestamps` namespace, so this spike uses that package only as a development-time interoperability oracle.
+
+The TypeScript package and OTSkit are test oracles in this phase. Neither is selected as the production ProofStamp protocol dependency by this spike.
 
 ## What the automated tests prove
 
@@ -44,6 +47,6 @@ Those remain explicit gates. No user-facing stamping flow should be added merely
 
 ## Dependency and license note
 
-`@opentimestamps/typescript-opentimestamps` is LGPL-3.0-or-later. `@otskit/core` is MIT. They are development-only test dependencies here, not a production dependency choice.
+The published `@lacrypta/typescript-opentimestamps` `0.1.0` package declares AGPL-3.0-or-later. The transferred/current `opentimestamps/typescript-opentimestamps` repository declares LGPL-3.0-or-later. `@otskit/core` is MIT. These are development-only test dependencies or references here, not a production dependency choice.
 
 The canonical fixtures originate from `opentimestamps/opentimestamps-client`, which is LGPL-3.0-or-later. Provenance is preserved in the fixture directory. A complete third-party license review remains a release gate before this repository is made production-ready.
