@@ -19,15 +19,15 @@ The TypeScript package and OTSkit are test oracles in this phase. Neither is sel
 
 The fixture corpus is copied byte-for-byte from the canonical Python client's example fixtures at the pinned commit.
 
-For supported valid fixtures, the Node test suite requires both JavaScript/TypeScript implementations to:
+The Node suite requires both JavaScript/TypeScript implementations to parse valid detached OpenTimestamps files and preserve the recorded file digest. OTSkit must serialize each supported valid fixture back to exactly the original bytes. The published La Crypta TypeScript implementation must do the same for the completed fixture.
 
-1. parse the standard detached OpenTimestamps file;
-2. preserve the recorded file digest;
-3. serialize the parsed proof back to exactly the same bytes.
+The canonical pending fixture exposes a known serialization difference in the published TypeScript implementation. Its reader converts the calendar string to a JavaScript `URL`, while its writer serializes `URL.toString()`. JavaScript adds a trailing `/` to an origin-only URL, so `https://alice.btc.calendar.opentimestamps.org` becomes `https://alice.btc.calendar.opentimestamps.org/`. That changes the detached `.ots` bytes but does not change the file digest.
+
+For that pending fixture, the suite therefore requires the TypeScript-normalized serialization to be stable on a second round trip, parse successfully in OTSkit, be preserved exactly by OTSkit, and retain the same detached file digest. This behavior is recorded as an interoperability finding rather than silently weakening the completed-proof byte-preservation check.
 
 For structurally invalid fixtures, the suite requires both implementations to reject them.
 
-A separate CI job installs the canonical Python client from the pinned source commit and requires `ots info` to accept the valid corpus and reject the canonical invalid corpus without contacting calendars or Bitcoin providers.
+A separate CI job installs the canonical Python client from the pinned source commit and requires `ots info` to accept the original valid corpus and reject the canonical invalid corpus without contacting calendars or Bitcoin providers.
 
 Fixture provenance, upstream blob IDs, byte lengths, and SHA-256 checksums are recorded under `tests/fixtures/opentimestamps/fixture-manifest.json`.
 
@@ -35,6 +35,7 @@ Fixture provenance, upstream blob IDs, byte lengths, and SHA-256 checksums are r
 
 This spike does not yet prove:
 
+- a TypeScript-normalized pending proof is accepted by the canonical Python client;
 - ProofStamp-generated commitments can be stamped and accepted by the canonical Python client;
 - calendar submission interoperability;
 - upgrade interoperability;
@@ -43,7 +44,7 @@ This spike does not yet prove:
 - production dependency or license suitability;
 - production browser networking or CSP changes.
 
-Those remain explicit gates. No user-facing stamping flow should be added merely because the fixture round-trip tests pass.
+Those remain explicit gates. No user-facing stamping flow should be added merely because the fixture interoperability tests pass.
 
 ## Dependency and license note
 
