@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ProofStamp via Bitcoin</title>
-  <meta name="description" content="Create a local ProofStamp manifest, independently verify the file fingerprint, and submit a blinded commitment to OpenTimestamps.">
+  <meta name="description" content="Create, upgrade, and verify a portable Bitcoin-backed ProofStamp without uploading your source file.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -86,9 +86,46 @@
       <div class="actions">
         <button id="download-receipt" type="button">Save ProofStamp receipt</button>
         <button id="download-proof" type="button" class="secondary">Save .ots proof</button>
+        <button id="check-current-proof" type="button" class="secondary">Check Bitcoin status</button>
       </div>
       <p id="timestamp-note" class="privacy-note"></p>
-      <p class="warning-note"><strong>Pending is not Bitcoin confirmation.</strong> A later verification step must upgrade the .ots proof and verify its Bitcoin attestation.</p>
+      <p class="warning-note"><strong>Pending is not Bitcoin confirmation.</strong> Keep the receipt and .ots proof. They can be checked again later.</p>
+    </section>
+
+    <section class="card verify-card" aria-labelledby="saved-heading">
+      <p class="eyebrow">Already have a receipt?</p>
+      <h2 id="saved-heading">Check a saved ProofStamp</h2>
+      <p class="section-copy">Open a saved ProofStamp receipt. The browser validates its internal bindings locally, asks only approved calendars for upgrades, and verifies any Bitcoin attestation against a self-authenticated raw block header.</p>
+      <label class="field">
+        <span>ProofStamp receipt</span>
+        <input id="saved-receipt" type="file" accept="application/json,.json">
+        <small>The receipt is read locally. It is not uploaded to ProofStamp.</small>
+      </label>
+      <button id="check-saved-proof" type="button">Check receipt</button>
+      <p id="saved-status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="verification-result" class="card" hidden aria-labelledby="verification-heading">
+      <div class="result-head">
+        <div>
+          <p id="verification-kicker" class="ok">Proof checked</p>
+          <h2 id="verification-heading">Bitcoin status</h2>
+        </div>
+        <span id="verification-badge" class="badge">Pending</span>
+      </div>
+      <dl class="details">
+        <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
+        <div id="verified-height-row" hidden><dt>Bitcoin block height</dt><dd id="verified-height"></dd></div>
+        <div id="verified-hash-row" hidden><dt>Bitcoin block hash</dt><dd><code id="verified-block-hash"></code></dd></div>
+        <div id="verified-time-row" hidden><dt>Bitcoin block time</dt><dd id="verified-block-time"></dd></div>
+        <div><dt>Verification method</dt><dd id="verification-method">OpenTimestamps + Blockstream raw block header</dd></div>
+      </dl>
+      <div class="actions">
+        <button id="save-checked-receipt" type="button">Save updated receipt</button>
+        <button id="save-checked-proof" type="button" class="secondary">Save updated .ots proof</button>
+      </div>
+      <p id="verification-note" class="warning-note"></p>
+      <p class="warning-note"><strong>Browser verification is a convenience check.</strong> It verifies the OpenTimestamps Bitcoin attestation against a raw block header fetched through Blockstream. It is not equivalent to independently validating Bitcoin consensus with your own Bitcoin Core node.</p>
     </section>
   </main>
   <script type="module" src="./app.js"></script>
