@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { read as readOpenTimestamps, write as writeOpenTimestamps } from '@opentimestamps/typescript-opentimestamps';
+import { read as readOpenTimestamps, write as writeOpenTimestamps } from '@lacrypta/typescript-opentimestamps';
 import { DetachedTimestampFile } from '@otskit/core';
 
 const fixtureRoot = new URL('./fixtures/opentimestamps/', import.meta.url);
@@ -37,7 +37,7 @@ for (const fixture of fixtureManifest.fixtures.filter((item) => item.kind.starts
     assert.deepEqual(
       Buffer.from(typedRoundTrip),
       Buffer.from(bytes),
-      'opentimestamps/typescript-opentimestamps changed canonical bytes on round-trip',
+      'La Crypta TypeScript OpenTimestamps changed canonical bytes on round-trip',
     );
 
     const otskitTimestamp = DetachedTimestampFile.deserialize(bytes);
