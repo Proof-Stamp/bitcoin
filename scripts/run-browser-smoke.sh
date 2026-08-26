@@ -25,9 +25,26 @@ server_pid=$!
 chrome_pid=$!
 
 cleanup() {
-  kill "$chrome_pid" "$server_pid" 2>/dev/null || true
-  wait "$chrome_pid" "$server_pid" 2>/dev/null || true
-  rm -rf "$profile_dir" "$server_log" "$chrome_log"
+  local profile_removed=false
+
+  kill "$chrome_pid" 2>/dev/null || true
+  wait "$chrome_pid" 2>/dev/null || true
+
+  kill "$server_pid" 2>/dev/null || true
+  wait "$server_pid" 2>/dev/null || true
+
+  for _ in $(seq 1 20); do
+    if rm -rf "$profile_dir" 2>/dev/null; then
+      profile_removed=true
+      break
+    fi
+    sleep 0.1
+  done
+
+  if [ "$profile_removed" != true ]; then
+    echo "Warning: could not remove Chrome profile directory after retries: $profile_dir" >&2
+  fi
+  rm -f "$server_log" "$chrome_log" 2>/dev/null || true
 }
 trap cleanup EXIT
 
