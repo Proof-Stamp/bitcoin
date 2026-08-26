@@ -10,6 +10,9 @@ import {
 import { BLOCKSTREAM_ESPLORA_API, UPGRADE_CALENDARS } from './network-policy.js'
 
 export const MAX_IMPORTED_OTS_BYTES = 128 * 1024
+export const MAX_PROOF_ATTESTATIONS = 128
+export const MAX_UPGRADE_QUERIES = 16
+export const MAX_BITCOIN_ATTESTATIONS = 8
 export const NETWORK_RESPONSE_LIMIT_BYTES = 10_000
 export const NETWORK_TIMEOUT_MS = 8_000
 
@@ -41,6 +44,10 @@ function parseProof(proofBytes) {
   }
   if (!(detached.fileHashOp instanceof OpSHA256)) {
     throw new Error('ProofStamp verification supports SHA-256 detached proofs only')
+  }
+  const attestations = detached.timestamp.allAttestations()
+  if (attestations.length > MAX_PROOF_ATTESTATIONS) {
+    throw new Error(`OpenTimestamps proof exceeds the ${MAX_PROOF_ATTESTATIONS}-attestation limit`)
   }
   return detached
 }
@@ -153,11 +160,9 @@ export async function upgradeOpenTimestampsProof(
     })
   }
 
-  const queried = []
   const skipped = []
-  const failed = []
+  const candidates = []
   const seen = new Set()
-
   for (const stamp of detached.timestamp.directlyVerified()) {
     for (const attestation of stamp.attestations) {
       if (attestation.kind !== 'pending') continue
@@ -166,16 +171,27 @@ export async function upgradeOpenTimestampsProof(
         skipped.push(attestation.uri)
         continue
       }
-      const key = `${origin}:${bytesToHex(stamp.getDigest())}`
+      const digest = stamp.getDigest()
+      const key = `${origin}:${bytesToHex(digest)}`
       if (seen.has(key)) continue
       seen.add(key)
-      queried.push(origin)
-      try {
-        const upgrade = await queryCalendar(origin, stamp.getDigest(), fetchImpl, timeoutMs)
-        if (upgrade) stamp.merge(upgrade)
-      } catch (error) {
-        failed.push(Object.freeze({ calendar: origin, error: error instanceof Error ? error.name : 'Error' }))
-      }
+      candidates.push({ stamp, origin, digest })
+    }
+  }
+
+  if (candidates.length > MAX_UPGRADE_QUERIES) {
+    throw new Error(`OpenTimestamps proof requires more than ${MAX_UPGRADE_QUERIES} calendar upgrade queries`)
+  }
+
+  const queried = []
+  const failed = []
+  for (const { stamp, origin, digest } of candidates) {
+    queried.push(origin)
+    try {
+      const upgrade = await queryCalendar(origin, digest, fetchImpl, timeoutMs)
+      if (upgrade) stamp.merge(upgrade)
+    } catch (error) {
+      failed.push(Object.freeze({ calendar: origin, error: error instanceof Error ? error.name : 'Error' }))
     }
   }
 
@@ -245,6 +261,9 @@ export async function verifyBitcoinAttestations(
   const detached = parseProof(proofBytes)
   const bitcoin = detached.timestamp.allAttestations().filter(({ attestation }) => attestation.kind === 'bitcoin')
   if (bitcoin.length === 0) throw new Error('No Bitcoin attestation is present yet')
+  if (bitcoin.length > MAX_BITCOIN_ATTESTATIONS) {
+    throw new Error(`OpenTimestamps proof exceeds the ${MAX_BITCOIN_ATTESTATIONS}-Bitcoin-attestation verification limit`)
+  }
 
   const verified = []
   const failures = []
