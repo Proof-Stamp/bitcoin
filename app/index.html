@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProofStamp via Bitcoin</title>
+  <meta name="description" content="Create a local ProofStamp manifest and independently verify the file fingerprint before timestamp submission.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">ProofStamp via Bitcoin</p>
+      <h1>Prepare a file for independent timestamping.</h1>
+      <p>Your file stays on this device. This step runs two independent SHA-256 checks locally and creates the ProofStamp manifest. It does not submit anything to OpenTimestamps or Bitcoin yet.</p>
+    </header>
+
+    <section class="card" aria-labelledby="prepare-heading">
+      <h2 id="prepare-heading">Local preparation</h2>
+      <form id="prepare-form">
+        <label class="field">
+          <span>File</span>
+          <input id="file" name="file" type="file" required>
+          <small>One file, up to 50 MiB in this browser version.</small>
+        </label>
+
+        <label class="field">
+          <span>Description <em>optional</em></span>
+          <textarea id="description" name="description" rows="3" maxlength="4096" placeholder="What is this record?"></textarea>
+        </label>
+
+        <label class="check">
+          <input id="include-metadata" type="checkbox">
+          <span>Include the file name and browser-provided media type in the manifest</span>
+        </label>
+        <p class="privacy-note">Off by default to reduce metadata exposure in the portable ProofStamp.</p>
+
+        <button id="prepare-button" type="submit">Run local checks</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="result" class="card" hidden aria-labelledby="result-heading">
+      <div class="result-head">
+        <div>
+          <p class="ok">Local checks passed</p>
+          <h2 id="result-heading">Ready for timestamp submission</h2>
+        </div>
+        <span class="badge">Not timestamped yet</span>
+      </div>
+
+      <dl class="details">
+        <div><dt>File SHA-256</dt><dd><code id="file-sha"></code></dd></div>
+        <div><dt>Manifest commitment</dt><dd><code id="manifest-commitment"></code></dd></div>
+        <div><dt>Independent checks</dt><dd>Web Crypto SHA-256 + RustCrypto SHA-256</dd></div>
+      </dl>
+
+      <details>
+        <summary>Canonical Manifest v1</summary>
+        <pre id="manifest-text"></pre>
+      </details>
+
+      <div class="actions">
+        <button id="download-manifest" type="button">Save manifest</button>
+        <button id="download-draft" type="button" class="secondary">Save local draft</button>
+      </div>
+      <p class="privacy-note">The local draft is not proof of a timestamp. A later step will submit only the manifest commitment to approved OpenTimestamps calendars.</p>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

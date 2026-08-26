@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:wasm": "bash scripts/build-rust-hasher.sh",
+    "build:browser": "node scripts/build-browser.mjs",
+    "build": "npm run build:wasm && npm run build:browser",
     "test": "node --test",
-    "test:interop": "node --test tests/opentimestamps-interop.test.mjs"
+    "test:interop": "node --test tests/opentimestamps-interop.test.mjs",
+    "check": "npm run build && npm test"
   },
   "devDependencies": {
     "@lacrypta/typescript-opentimestamps": "0.1.0",

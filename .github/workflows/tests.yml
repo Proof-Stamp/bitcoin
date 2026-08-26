@@ -17,7 +17,7 @@ concurrency:
 jobs:
   node-interop:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -28,15 +28,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Run Node interoperability tests when present
+      - name: Install JavaScript test dependencies
         shell: bash
-        run: |
-          if [ ! -f package.json ]; then
-            echo "No package.json yet; CI bootstrap only."
-            exit 0
-          fi
-          npm install --ignore-scripts --no-audit --no-fund
-          npm test
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build browser foundation and run Node tests
+        shell: bash
+        run: npm run check
 
   canonical-python:
     runs-on: ubuntu-latest
