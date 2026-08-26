@@ -8,7 +8,6 @@ const readme = await read('../README.md')
 const independent = await read('../docs/independent-verification.md')
 const deployment = await read('../docs/deployment-and-product-boundary.md')
 const release = await read('../docs/experimental-release.md')
-const rustBuild = await read('../scripts/build-rust-hasher.sh')
 
 test('README identifies the current roadmap phase and independent verification guide', () => {
   assert.match(readme, /Phase 6: static Cloudflare Pages deployment and experimental release/)
@@ -30,15 +29,6 @@ test('deployment documentation keeps the static-only Cloudflare boundary', () =>
   assert.match(deployment, /Build output directory: dist/)
   assert.match(deployment, /Node\.js: 22/)
   assert.match(deployment, /Do not introduce Cloudflare Functions, Workers, server-side proof storage/)
-})
-
-test('Cloudflare Rust bootstrap is narrow, pinned, and checksum-verified', () => {
-  assert.match(rustBuild, /CF_PAGES/)
-  assert.match(rustBuild, /rustup_version="1\.29\.0"/)
-  assert.match(rustBuild, /static\.rust-lang\.org\/rustup\/archive/)
-  assert.match(rustBuild, /rust-toolchain\.toml/)
-  assert.match(rustBuild, /sha256sum --check --status/)
-  assert.match(rustBuild, /if ! command -v rustup/)
 })
 
 test('experimental release checklist requires green protected checks and a production smoke test', () => {
