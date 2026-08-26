@@ -10,3 +10,4 @@ rustup target add wasm32-unknown-unknown >/dev/null
 cargo build --manifest-path "$MANIFEST" --release --target wasm32-unknown-unknown --locked
 node "$ROOT/scripts/check-rust-wasm.mjs" "$WASM"
 node "$ROOT/scripts/embed-rust-wasm.mjs" "$WASM" "$GENERATED"
+node "$ROOT/scripts/check-dual-local-hash.mjs"
