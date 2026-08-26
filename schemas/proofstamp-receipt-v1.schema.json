@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofstamp.org/schemas/proofstamp-receipt-v1.schema.json",
+  "title": "ProofStamp Pending Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "status",
+    "target",
+    "canonicalManifestUtf8Base64",
+    "manifestCommitmentSha256",
+    "localHashAgreement",
+    "openTimestamps"
+  ],
+  "properties": {
+    "format": { "const": "proofstamp-receipt" },
+    "version": { "const": 1 },
+    "status": { "const": "pending" },
+    "target": { "const": "bitcoin" },
+    "canonicalManifestUtf8Base64": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 12000,
+      "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+    },
+    "manifestCommitmentSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "localHashAgreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "fileSha256", "webCryptoSha256", "rustSha256"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "fileSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "webCryptoSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "rustSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "openTimestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proofBase64",
+        "proofSha256",
+        "calendarsAttempted",
+        "calendarsAccepted",
+        "calendarsFailed",
+        "redundancy"
+      ],
+      "properties": {
+        "proofBase64": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 65536,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        },
+        "proofSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "calendarsAttempted": { "$ref": "#/$defs/calendarArray" },
+        "calendarsAccepted": { "$ref": "#/$defs/nonEmptyCalendarArray" },
+        "calendarsFailed": { "$ref": "#/$defs/calendarArray" },
+        "redundancy": { "enum": ["normal", "reduced"] }
+      }
+    }
+  },
+  "$defs": {
+    "calendar": {
+      "enum": [
+        "https://a.pool.opentimestamps.org",
+        "https://b.pool.opentimestamps.org",
+        "https://a.pool.eternitywall.com"
+      ]
+    },
+    "calendarArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/calendar" }
+    },
+    "nonEmptyCalendarArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/calendar" }
+    }
+  }
+}

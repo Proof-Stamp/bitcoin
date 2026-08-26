@@ -11,9 +11,11 @@
     "test:interop": "node --test tests/opentimestamps-interop.test.mjs",
     "check": "npm run build && npm test"
   },
-  "devDependencies": {
-    "@lacrypta/typescript-opentimestamps": "0.1.0",
+  "dependencies": {
     "@otskit/core": "0.2.0"
+  },
+  "devDependencies": {
+    "@lacrypta/typescript-opentimestamps": "0.1.0"
   },
   "engines": {
     "node": "22.x"
