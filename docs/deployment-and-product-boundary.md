@@ -36,6 +36,8 @@ Node.js: 22
 Root directory: repository root
 ```
 
+The Cloudflare Pages build image does not currently provide `rustup`. The repository build keeps the Rust/WASM hashing design unchanged: when `CF_PAGES=1` and `rustup` is absent, `scripts/build-rust-hasher.sh` bootstraps the pinned rustup installer for the documented Linux x86_64 Pages environment, verifies the published installer checksum, then compiles the Rust SHA-256 module from this repository using the version pinned in `rust-toolchain.toml`. Outside Cloudflare Pages, a missing `rustup` still fails closed rather than silently changing the local build environment.
+
 The current v0 application requires no application secret or runtime environment variable.
 
 The first experimental deployment is not permission to add analytics, server-side proof processing, request logging of evidence data, Functions, Workers, or storage. Any such change requires a separate architecture and privacy review.
