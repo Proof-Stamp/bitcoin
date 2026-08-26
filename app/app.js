@@ -6,6 +6,15 @@ import { dualSha256File, MAX_BROWSER_FILE_BYTES } from './local-hash.js'
 import { createLocalDraftV1 } from './local-draft-v1.js'
 import { createPendingTimestamp } from './ots-stamp.js'
 import { createPendingReceiptV1 } from './pending-receipt-v1.js'
+import {
+  upgradeOpenTimestampsProof,
+  verifyBitcoinAttestations,
+} from './ots-upgrade-verify.js'
+import {
+  MAX_IMPORTED_RECEIPT_BYTES,
+  parseAndValidateProofStampReceiptText,
+  updateReceiptWithProof,
+} from './receipt-verify-v1.js'
 
 const form = document.querySelector('#prepare-form')
 const fileInput = document.querySelector('#file')
@@ -27,13 +36,38 @@ const proofSha = document.querySelector('#proof-sha')
 const timestampNote = document.querySelector('#timestamp-note')
 const downloadProofButton = document.querySelector('#download-proof')
 const downloadReceiptButton = document.querySelector('#download-receipt')
+const checkCurrentProofButton = document.querySelector('#check-current-proof')
+
+const savedReceiptInput = document.querySelector('#saved-receipt')
+const checkSavedProofButton = document.querySelector('#check-saved-proof')
+const savedStatus = document.querySelector('#saved-status')
+const verificationResult = document.querySelector('#verification-result')
+const verificationKicker = document.querySelector('#verification-kicker')
+const verificationBadge = document.querySelector('#verification-badge')
+const verifiedCommitment = document.querySelector('#verified-commitment')
+const verifiedHeightRow = document.querySelector('#verified-height-row')
+const verifiedHashRow = document.querySelector('#verified-hash-row')
+const verifiedTimeRow = document.querySelector('#verified-time-row')
+const verifiedHeight = document.querySelector('#verified-height')
+const verifiedBlockHash = document.querySelector('#verified-block-hash')
+const verifiedBlockTime = document.querySelector('#verified-block-time')
+const verificationMethod = document.querySelector('#verification-method')
+const verificationNote = document.querySelector('#verification-note')
+const saveCheckedReceiptButton = document.querySelector('#save-checked-receipt')
+const saveCheckedProofButton = document.querySelector('#save-checked-proof')
 
 let prepared = null
 let pending = null
+let checked = null
 
 function setStatus(message, isError = false) {
   status.textContent = message
   status.classList.toggle('error', isError)
+}
+
+function setSavedStatus(message, isError = false) {
+  savedStatus.textContent = message
+  savedStatus.classList.toggle('error', isError)
 }
 
 function downloadBlob(filename, blob) {
@@ -56,8 +90,12 @@ function downloadBytes(filename, bytes, type = 'application/vnd.opentimestamps.v
 }
 
 function safeBaseName(name) {
-  const trimmed = String(name || 'file').replace(/[\\/]/g, '_').slice(0, 120)
-  return trimmed || 'file'
+  const trimmed = String(name || 'proofstamp').replace(/[\\/]/g, '_').slice(0, 120)
+  return trimmed || 'proofstamp'
+}
+
+function receiptBaseName(name) {
+  return safeBaseName(String(name || 'proofstamp').replace(/\.proofstamp-receipt\.json$/i, '').replace(/\.json$/i, ''))
 }
 
 function invalidatePrepared() {
@@ -67,6 +105,65 @@ function invalidatePrepared() {
   result.hidden = true
   timestampResult.hidden = true
   setStatus('The inputs changed. Run the local checks again before submitting.')
+}
+
+function resetVerificationRows() {
+  verifiedHeightRow.hidden = true
+  verifiedHashRow.hidden = true
+  verifiedTimeRow.hidden = true
+  verifiedHeight.textContent = ''
+  verifiedBlockHash.textContent = ''
+  verifiedBlockTime.textContent = ''
+}
+
+function renderChecked(resultPackage) {
+  const { receipt, verification, upgrade } = resultPackage
+  checked = resultPackage
+  verifiedCommitment.textContent = receipt.manifestCommitmentSha256
+  resetVerificationRows()
+
+  if (verification) {
+    verificationKicker.textContent = 'Bitcoin attestation verified'
+    verificationBadge.textContent = 'Verified via browser'
+    verifiedHeight.textContent = String(verification.earliest.height)
+    verifiedBlockHash.textContent = verification.earliest.blockHash
+    verifiedBlockTime.textContent = new Date(verification.earliest.blockTime * 1000).toISOString()
+    verifiedHeightRow.hidden = false
+    verifiedHashRow.hidden = false
+    verifiedTimeRow.hidden = false
+    verificationMethod.textContent = 'OpenTimestamps + Blockstream raw block header'
+    verificationNote.textContent = 'The proof has a Bitcoin attestation that matches the fetched raw block header. The explorer supplies the current best-chain block hash at that height; ProofStamp does not independently run Bitcoin consensus in the browser.'
+  } else {
+    verificationKicker.textContent = 'Proof checked'
+    verificationBadge.textContent = 'Pending'
+    verificationMethod.textContent = 'OpenTimestamps calendar upgrade check'
+    const skipped = upgrade.skippedUnapprovedCalendars.length
+    const failed = upgrade.failedCalendars.length
+    const notes = ['No verified Bitcoin attestation is available yet. Keep the updated receipt and .ots proof and check again later.']
+    if (skipped > 0) notes.push(`${skipped} unapproved calendar address${skipped === 1 ? ' was' : 'es were'} ignored without making a request.`)
+    if (failed > 0) notes.push(`${failed} approved calendar request${failed === 1 ? '' : 's'} failed during this check.`)
+    verificationNote.textContent = notes.join(' ')
+  }
+
+  verificationResult.hidden = false
+}
+
+async function checkReceiptProof(receipt, proofBytes, baseName) {
+  const upgrade = await upgradeOpenTimestampsProof(proofBytes)
+  let verification = null
+  if (upgrade.state === 'bitcoin-attested') {
+    verification = await verifyBitcoinAttestations(upgrade.proofBytes)
+  }
+  const updatedReceipt = await updateReceiptWithProof(receipt, upgrade.proofBytes, verification)
+  const resultPackage = Object.freeze({
+    receipt: updatedReceipt,
+    proofBytes: upgrade.proofBytes,
+    verification,
+    upgrade,
+    baseName,
+  })
+  renderChecked(resultPackage)
+  return resultPackage
 }
 
 fileInput.addEventListener('change', invalidatePrepared)
@@ -155,6 +252,62 @@ submitTimestampButton.addEventListener('click', async () => {
   }
 })
 
+checkCurrentProofButton.addEventListener('click', async () => {
+  if (!prepared || !pending) return
+  checkCurrentProofButton.disabled = true
+  try {
+    setStatus('Checking approved calendars for an upgrade and verifying any Bitcoin attestation…')
+    const checkedCurrent = await checkReceiptProof(pending.receipt, pending.stamp.proofBytes, safeBaseName(prepared.file.name))
+    pending = {
+      stamp: { ...pending.stamp, proofBytes: checkedCurrent.proofBytes },
+      receipt: checkedCurrent.receipt,
+    }
+    proofSha.textContent = checkedCurrent.receipt.openTimestamps.proofSha256
+    if (checkedCurrent.verification) {
+      timestampBadge.textContent = 'Bitcoin attestation verified'
+      setStatus('Bitcoin attestation verified in the browser using a self-authenticated raw block header.')
+    } else {
+      setStatus('Still pending. No verified Bitcoin attestation is available yet.')
+    }
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : 'Bitcoin status check failed.', true)
+  } finally {
+    checkCurrentProofButton.disabled = false
+  }
+})
+
+checkSavedProofButton.addEventListener('click', async () => {
+  verificationResult.hidden = true
+  checked = null
+  setSavedStatus('')
+  const [receiptFile] = savedReceiptInput.files
+  if (!receiptFile) {
+    setSavedStatus('Choose a ProofStamp receipt first.', true)
+    return
+  }
+  if (receiptFile.size === 0 || receiptFile.size > MAX_IMPORTED_RECEIPT_BYTES) {
+    setSavedStatus('The receipt file is outside the supported size limit.', true)
+    return
+  }
+
+  checkSavedProofButton.disabled = true
+  savedReceiptInput.disabled = true
+  try {
+    setSavedStatus('Validating the receipt locally…')
+    const validated = await parseAndValidateProofStampReceiptText(await receiptFile.text())
+    setSavedStatus('Receipt bindings are valid. Checking approved calendars and Bitcoin status…')
+    const resultPackage = await checkReceiptProof(validated.receipt, validated.proofBytes, receiptBaseName(receiptFile.name))
+    setSavedStatus(resultPackage.verification
+      ? 'Receipt is internally consistent and its Bitcoin attestation verified through the browser check.'
+      : 'Receipt is internally consistent. The OpenTimestamps proof is still pending.')
+  } catch (error) {
+    setSavedStatus(error instanceof Error ? error.message : 'Receipt check failed.', true)
+  } finally {
+    checkSavedProofButton.disabled = false
+    savedReceiptInput.disabled = false
+  }
+})
+
 downloadManifestButton.addEventListener('click', () => {
   if (!prepared) return
   downloadText(`${safeBaseName(prepared.file.name)}.proofstamp-manifest.json`, prepared.canonical)
@@ -173,4 +326,14 @@ downloadProofButton.addEventListener('click', () => {
 downloadReceiptButton.addEventListener('click', () => {
   if (!prepared || !pending) return
   downloadText(`${safeBaseName(prepared.file.name)}.proofstamp-receipt.json`, `${JSON.stringify(pending.receipt, null, 2)}\n`)
+})
+
+saveCheckedProofButton.addEventListener('click', () => {
+  if (!checked) return
+  downloadBytes(`${checked.baseName}.proofstamp.ots`, checked.proofBytes)
+})
+
+saveCheckedReceiptButton.addEventListener('click', () => {
+  if (!checked) return
+  downloadText(`${checked.baseName}.proofstamp-receipt.json`, `${JSON.stringify(checked.receipt, null, 2)}\n`)
 })
