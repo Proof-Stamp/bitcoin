@@ -48,7 +48,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for _ in $(seq 1 50); do
+# GitHub-hosted runners can occasionally take several seconds to expose the
+# Chrome DevTools endpoint after a cold browser start. Keep the smoke test
+# strict, but allow enough startup time before treating that as a failure.
+for _ in $(seq 1 150); do
   if curl --fail --silent http://127.0.0.1:4173/ >/dev/null && curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
     break
   fi
