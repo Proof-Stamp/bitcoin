@@ -193,9 +193,10 @@ test('updated receipt records browser verification method without claiming indep
   const draft = await createLocalDraftV1(manifest, agreement, webcrypto.subtle)
   const commitment = draft.manifestCommitmentSha256
   const initialProof = pendingProof(hexToBytes(commitment))
+  const calendar = 'https://a.pool.opentimestamps.org'
   const receipt = await createPendingReceiptV1(draft, {
     status: 'pending', manifestCommitmentSha256: commitment, proofBytes: initialProof,
-    calendarsAttempted: ['x'], calendarsAccepted: ['x'], calendarsFailed: [], redundancy: 'reduced',
+    calendarsAttempted: [calendar], calendarsAccepted: [calendar], calendarsFailed: [], redundancy: 'reduced',
   }, webcrypto.subtle)
   const completed = completedProof(hexToBytes(commitment), 900000)
   const verification = {
