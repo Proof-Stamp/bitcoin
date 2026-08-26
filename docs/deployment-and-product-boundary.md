@@ -24,6 +24,22 @@ The preferred architecture is browser-first and static-first. Cloudflare serves 
 
 Do not introduce Cloudflare Functions, Workers, server-side proof storage, or another application backend unless a later requirement cannot be met safely in the browser and the trust/privacy impact has been reviewed explicitly.
 
+## Experimental release deployment settings
+
+Use the repository's existing static build without adding another application layer:
+
+```text
+Production branch: main
+Build command: npm run build
+Build output directory: dist
+Node.js: 22
+Root directory: repository root
+```
+
+The current v0 application requires no application secret or runtime environment variable.
+
+The first experimental deployment is not permission to add analytics, server-side proof processing, request logging of evidence data, Functions, Workers, or storage. Any such change requires a separate architecture and privacy review.
+
 ## Core product constraints
 
 V0 must preserve all of the following:
@@ -38,6 +54,7 @@ V0 must preserve all of the following:
 - no `mailto:` flow is used;
 - no email address is collected for the core flow;
 - no email handoff is required;
+- no analytics call is required by the v0 browser application;
 - the user can save a portable ProofStamp receipt locally;
 - the standard `.ots` representation remains exportable;
 - a completed proof remains independently verifiable without ProofStamp infrastructure.
@@ -53,6 +70,8 @@ Production network destinations must be explicitly allowlisted and covered by te
 
 Do not use a generic `connect-src https:` CSP policy. Do not allow imported or attacker-controlled proof data to add new network destinations.
 
+The production deployment must serve the repository's reviewed `_headers` policy. A deployment configuration that drops or weakens those headers fails the release gate.
+
 ## Data boundary
 
 The source file must never be uploaded to ProofStamp, Cloudflare application code, an OpenTimestamps calendar, or a Bitcoin data provider.
@@ -67,8 +86,19 @@ The portable receipt is the user's primary evidence artifact. A pending OpenTime
 
 ProofStamp server state must not be required to recover or verify a receipt the user has saved.
 
+The independent verification path is documented in `docs/independent-verification.md`. It uses the portable receipt, the standard `.ots` proof, the canonical OpenTimestamps client, and optionally a locally controlled Bitcoin Core node rather than a ProofStamp backend.
+
 ## Deployment gate
 
 A production deployment to `ots.proofstamp.org` is not a release gate for protocol work. Protocol interoperability and deterministic manifest behavior must be established first.
 
-The first browser implementation should nevertheless be structured from day one as a static Cloudflare Pages application so deployment does not require a later architecture rewrite.
+Those protocol gates and the Phase 5 hardening pass are implemented before the experimental deployment. The first browser implementation remains a static Cloudflare Pages application so deployment does not require an architecture rewrite.
+
+Before tagging the experimental release, the deployed `main` commit must pass the production smoke test in `docs/experimental-release.md`. In particular:
+
+- the local preparation path must not make a non-local request;
+- timestamp creation may contact only approved calendar origins;
+- saved-receipt checks must validate local bindings before network access;
+- a proof waiting for Bitcoin must not be presented as Bitcoin-verified;
+- the browser Bitcoin verifier must retain its `consensusValidation: false` boundary;
+- no source-file upload or new network origin may appear in production.

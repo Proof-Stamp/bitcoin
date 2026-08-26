@@ -11,7 +11,13 @@ test('browser UI accepts exactly one source file, has no email handoff, and keep
   assert.match(index, /id="file"[^>]*type="file"/)
   assert.doesNotMatch(index, /mailto:/i)
   assert.match(index, /Not submitted yet/)
-  assert.match(index, /Pending is not Bitcoin confirmation/)
+  assert.match(index, /Waiting for Bitcoin is not Bitcoin confirmation/)
+  assert.match(app, /timestampBadge\.textContent = 'Waiting for Bitcoin'/)
+})
+
+test('browser UI exposes the independent verification path without adding a runtime dependency', () => {
+  assert.match(index, /docs\/independent-verification\.md/)
+  assert.match(index, /standard OpenTimestamps tooling and your own Bitcoin Core node/)
 })
 
 test('application coordinator contains no direct outbound request primitive', () => {

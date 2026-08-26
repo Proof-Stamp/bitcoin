@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ProofStamp via Bitcoin</title>
-  <meta name="description" content="Create, upgrade, and verify a portable Bitcoin-backed ProofStamp without uploading your source file.">
+  <meta name="description" content="Create and verify a portable Bitcoin-backed timestamp without uploading your source file.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -12,11 +12,11 @@
     <header class="hero">
       <p class="eyebrow">ProofStamp via Bitcoin</p>
       <h1>Create a verifiable timestamp without uploading your file.</h1>
-      <p>Your file stays on this device. ProofStamp checks it with two independent SHA-256 implementations, creates a deterministic manifest, then submits only a blinded commitment to approved OpenTimestamps calendars.</p>
+      <p>Choose a file. ProofStamp checks its fingerprint locally with two independent SHA-256 implementations, then submits only a blinded commitment through OpenTimestamps.</p>
     </header>
 
     <section class="card" aria-labelledby="prepare-heading">
-      <h2 id="prepare-heading">1. Check the file locally</h2>
+      <h2 id="prepare-heading">1. Choose and check the file</h2>
       <form id="prepare-form">
         <label class="field">
           <span>File</span>
@@ -35,7 +35,7 @@
         </label>
         <p class="privacy-note">Off by default to reduce metadata in the portable ProofStamp.</p>
 
-        <button id="prepare-button" type="submit">Run local checks</button>
+        <button id="prepare-button" type="submit">Check file locally</button>
       </form>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
@@ -43,8 +43,8 @@
     <section id="result" class="card" hidden aria-labelledby="result-heading">
       <div class="result-head">
         <div>
-          <p class="ok">Local checks passed</p>
-          <h2 id="result-heading">2. Submit the timestamp</h2>
+          <p class="ok">File checked locally</p>
+          <h2 id="result-heading">2. Create the timestamp proof</h2>
         </div>
         <span class="badge">Not submitted yet</span>
       </div>
@@ -56,30 +56,30 @@
       </dl>
 
       <details>
-        <summary>Canonical Manifest v1</summary>
+        <summary>Technical details: Canonical Manifest v1</summary>
         <pre id="manifest-text"></pre>
       </details>
 
       <div class="actions">
-        <button id="submit-timestamp" type="button">Submit to OpenTimestamps</button>
+        <button id="submit-timestamp" type="button">Create timestamp proof</button>
         <button id="download-manifest" type="button" class="secondary">Save manifest</button>
         <button id="download-draft" type="button" class="secondary">Save local draft</button>
       </div>
-      <p class="privacy-note">Submission sends a randomised commitment derived from the manifest to three approved calendars. Your source file and manifest are not uploaded.</p>
+      <p class="privacy-note">Only a blinded commitment is sent to three approved OpenTimestamps calendars. Your source file and manifest stay on this device.</p>
     </section>
 
     <section id="timestamp-result" class="card" hidden aria-labelledby="timestamp-heading">
       <div class="result-head">
         <div>
-          <p class="ok">OpenTimestamps submission accepted</p>
-          <h2 id="timestamp-heading">3. Keep the pending proof</h2>
+          <p class="ok">Timestamp request accepted</p>
+          <h2 id="timestamp-heading">3. Save your proof</h2>
         </div>
-        <span id="timestamp-badge" class="badge">Pending</span>
+        <span id="timestamp-badge" class="badge">Waiting for Bitcoin</span>
       </div>
 
       <dl class="details">
         <div><dt>Calendars accepted</dt><dd id="calendar-count"></dd></div>
-        <div><dt>Pending proof SHA-256</dt><dd><code id="proof-sha"></code></dd></div>
+        <div><dt>Proof SHA-256</dt><dd><code id="proof-sha"></code></dd></div>
         <div><dt>Target</dt><dd>Bitcoin via OpenTimestamps</dd></div>
       </dl>
 
@@ -89,13 +89,13 @@
         <button id="check-current-proof" type="button" class="secondary">Check Bitcoin status</button>
       </div>
       <p id="timestamp-note" class="privacy-note"></p>
-      <p class="warning-note"><strong>Pending is not Bitcoin confirmation.</strong> Keep the receipt and .ots proof. They can be checked again later.</p>
+      <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Keep the receipt and .ots proof. They can be checked again later.</p>
     </section>
 
     <section class="card verify-card" aria-labelledby="saved-heading">
       <p class="eyebrow">Already have a receipt?</p>
       <h2 id="saved-heading">Check a saved ProofStamp</h2>
-      <p class="section-copy">Open a saved ProofStamp receipt. The browser validates its internal bindings locally, asks only approved calendars for upgrades, and verifies any Bitcoin attestation against a self-authenticated raw block header.</p>
+      <p class="section-copy">Open a saved ProofStamp receipt. The browser checks its internal bindings locally first, then asks only approved calendars for updates and checks any Bitcoin attestation.</p>
       <label class="field">
         <span>ProofStamp receipt</span>
         <input id="saved-receipt" type="file" accept="application/json,.json">
@@ -111,7 +111,7 @@
           <p id="verification-kicker" class="ok">Proof checked</p>
           <h2 id="verification-heading">Bitcoin status</h2>
         </div>
-        <span id="verification-badge" class="badge">Pending</span>
+        <span id="verification-badge" class="badge">Waiting for Bitcoin</span>
       </div>
       <dl class="details">
         <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
@@ -126,6 +126,13 @@
       </div>
       <p id="verification-note" class="warning-note"></p>
       <p class="warning-note"><strong>Browser verification is a convenience check.</strong> It verifies the OpenTimestamps Bitcoin attestation against a raw block header fetched through Blockstream. It is not equivalent to independently validating Bitcoin consensus with your own Bitcoin Core node.</p>
+    </section>
+
+    <section class="card" aria-labelledby="independent-heading">
+      <p class="eyebrow">Independent verification</p>
+      <h2 id="independent-heading">The proof does not depend on ProofStamp staying online</h2>
+      <p class="section-copy">Save the standard .ots proof and the ProofStamp receipt. A completed proof can be checked with standard OpenTimestamps tooling and your own Bitcoin Core node.</p>
+      <p class="privacy-note"><a href="https://github.com/Proof-Stamp/bitcoin/blob/main/docs/independent-verification.md">Read the independent verification instructions</a>.</p>
     </section>
   </main>
   <script type="module" src="./app.js"></script>
