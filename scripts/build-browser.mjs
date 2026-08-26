@@ -12,16 +12,28 @@ await mkdir(new URL('vendor/', dist), { recursive: true })
 for (const name of ['index.html', 'styles.css', 'app.js', '_headers']) {
   await cp(new URL(name, app), new URL(name, dist))
 }
-for (const name of ['manifest-v1.js', 'local-hash.js', 'rust-sha256.js', 'rust-sha256-wasm.js', 'local-draft-v1.js', 'pending-receipt-v1.js']) {
+for (const name of [
+  'manifest-v1.js',
+  'local-hash.js',
+  'rust-sha256.js',
+  'rust-sha256-wasm.js',
+  'local-draft-v1.js',
+  'pending-receipt-v1.js',
+  'receipt-verify-v1.js',
+  'network-policy.js',
+]) {
   await cp(new URL(name, src), new URL(name, dist))
 }
 
 await cp(coreBundle, new URL('vendor/otskit-core.js', dist))
-const stampSource = await readFile(new URL('ots-stamp.js', src), 'utf8')
-const browserStampSource = stampSource.replace("from '@otskit/core'", "from './vendor/otskit-core.js'")
-if (browserStampSource === stampSource || browserStampSource.includes("'@otskit/core'")) {
-  throw new Error('Failed to rewrite @otskit/core import for static browser build')
+
+for (const name of ['ots-stamp.js', 'ots-upgrade-verify.js']) {
+  const source = await readFile(new URL(name, src), 'utf8')
+  const browserSource = source.replace("from '@otskit/core'", "from './vendor/otskit-core.js'")
+  if (browserSource === source || browserSource.includes("'@otskit/core'")) {
+    throw new Error(`Failed to rewrite @otskit/core import for ${name}`)
+  }
+  await writeFile(new URL(name, dist), browserSource)
 }
-await writeFile(new URL('ots-stamp.js', dist), browserStampSource)
 
 console.log('Built static browser app in dist/')
