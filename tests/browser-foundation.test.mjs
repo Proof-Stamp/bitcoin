@@ -58,6 +58,17 @@ test('normal UI keeps protocol internals behind progressive disclosure', () => {
   assert.match(index, /Save separate \.ots proof/)
 })
 
+test('official OpenTimestamps verifier handoff preloads the proof digest instead of the source file hash', () => {
+  assert.match(index, /id="verify-opentimestamps-current"/)
+  assert.match(index, /id="verify-opentimestamps-checked"/)
+  assert.match(index, /Verify this proof on OpenTimestamps\.org/)
+  assert.match(index, /official verifier with this proof and its Manifest commitment prefilled/i)
+  assert.match(app, /new URL\('https:\/\/opentimestamps\.org\/'\)/)
+  assert.match(app, /searchParams\.set\('algorithm', 'SHA256'\)/)
+  assert.match(app, /searchParams\.set\('digest', manifestCommitmentSha256\)/)
+  assert.match(app, /searchParams\.set\('ots', proofBytesHex\(proofBytes\)\)/)
+})
+
 test('verification result states the product claim boundary', () => {
   assert.match(index, /exact file bytes match the timestamped record/)
   assert.match(index, /does not prove who created the file/)
@@ -65,6 +76,7 @@ test('verification result states the product claim boundary', () => {
 })
 
 test('browser UI exposes the independent verification path without adding a runtime dependency', () => {
+  assert.match(index, /opentimestamps\.org\/#stamp-and-verify/)
   assert.match(index, /github\.com\/Proof-Stamp\/ots\/blob\/main\/docs\/independent-verification\.md/)
   assert.match(index, /standard OpenTimestamps tooling and your own Bitcoin Core node/)
 })
