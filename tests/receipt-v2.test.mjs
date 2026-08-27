@@ -41,6 +41,23 @@ test('receipt v2 timestamps the original file SHA-256 directly', async () => {
   assert.equal(validated.receipt.fileSha256, fileSha256)
 })
 
+test('receipt v2 accepts the actual browser dual-hash result without persisting helper fields', async () => {
+  const browserAgreement = Object.freeze({
+    algorithm: 'sha256',
+    sha256: fileSha256,
+    webCryptoSha256: fileSha256,
+    rustSha256: fileSha256,
+    agreed: true,
+    size: fileBytes.byteLength,
+  })
+
+  const receipt = await createPendingReceiptV2(browserAgreement, stamp)
+  assert.deepEqual(receipt.localHashAgreement, agreement)
+  assert.equal(receipt.fileSha256, fileSha256)
+  assert.equal(Object.hasOwn(receipt.localHashAgreement, 'sha256'), false)
+  assert.equal(Object.hasOwn(receipt.localHashAgreement, 'size'), false)
+})
+
 test('unified receipt parser recognizes v2 and exposes the file as the timestamp digest', async () => {
   const receipt = await createPendingReceiptV2(agreement, stamp)
   const validated = await parseAndValidateProofStampReceiptText(JSON.stringify(receipt))
