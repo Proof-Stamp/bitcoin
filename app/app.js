@@ -37,6 +37,7 @@ const timestampNote = document.querySelector('#timestamp-note')
 const downloadProofButton = document.querySelector('#download-proof')
 const downloadReceiptButton = document.querySelector('#download-receipt')
 const checkCurrentProofButton = document.querySelector('#check-current-proof')
+const verifyOpenTimestampsCurrentLink = document.querySelector('#verify-opentimestamps-current')
 
 const savedReceiptInput = document.querySelector('#saved-receipt')
 const savedOriginalFileInput = document.querySelector('#saved-original-file')
@@ -60,6 +61,7 @@ const verificationMethod = document.querySelector('#verification-method')
 const verificationNote = document.querySelector('#verification-note')
 const saveCheckedReceiptButton = document.querySelector('#save-checked-receipt')
 const saveCheckedProofButton = document.querySelector('#save-checked-proof')
+const verifyOpenTimestampsCheckedLink = document.querySelector('#verify-opentimestamps-checked')
 
 let prepared = null
 let pending = null
@@ -105,10 +107,29 @@ function receiptBaseName(name) {
   return safeBaseName(String(name || 'proofstamp').replace(/\.proofstamp-receipt\.json$/i, '').replace(/\.json$/i, ''))
 }
 
+function proofBytesHex(bytes) {
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')
+}
+
+function officialOpenTimestampsVerifierUrl(proofBytes, manifestCommitmentSha256) {
+  const url = new URL('https://opentimestamps.org/')
+  url.searchParams.set('algorithm', 'SHA256')
+  url.searchParams.set('digest', manifestCommitmentSha256)
+  url.searchParams.set('ots', proofBytesHex(proofBytes))
+  url.hash = 'stamp-and-verify'
+  return url.toString()
+}
+
+function setOfficialOpenTimestampsVerifierLink(link, proofBytes, manifestCommitmentSha256) {
+  link.href = officialOpenTimestampsVerifierUrl(proofBytes, manifestCommitmentSha256)
+  link.hidden = false
+}
+
 function clearChecked(source = null) {
   if (source && checked?.source !== source) return
   checked = null
   verificationResult.hidden = true
+  verifyOpenTimestampsCheckedLink.hidden = true
 }
 
 function beginVerificationRun(source) {
@@ -127,6 +148,7 @@ function invalidatePrepared() {
   pending = null
   result.hidden = true
   timestampResult.hidden = true
+  verifyOpenTimestampsCurrentLink.hidden = true
   if (activeVerificationRun?.source === 'current') activeVerificationRun = null
   clearChecked('current')
   setStatus('The inputs changed. Check the file locally again before submitting.')
@@ -147,6 +169,11 @@ function renderChecked(resultPackage, source) {
   const { receipt, verification, upgrade, fileVerification = null } = resultPackage
   checked = Object.freeze({ ...resultPackage, source })
   verifiedCommitment.textContent = receipt.manifestCommitmentSha256
+  setOfficialOpenTimestampsVerifierLink(
+    verifyOpenTimestampsCheckedLink,
+    resultPackage.proofBytes,
+    receipt.manifestCommitmentSha256,
+  )
   resetVerificationRows()
 
   if (fileVerification?.matches) {
@@ -233,6 +260,7 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault()
   result.hidden = true
   timestampResult.hidden = true
+  verifyOpenTimestampsCurrentLink.hidden = true
   clearChecked('current')
   prepared = null
   pending = null
@@ -314,6 +342,11 @@ submitTimestampButton.addEventListener('click', async () => {
     timestampNote.textContent = stamp.redundancy === 'reduced'
       ? 'Only one calendar accepted this submission. Save the receipt, then check it again in about 3 hours. The separate .ots proof is optional for normal ProofStamp use.'
       : 'Save the receipt, then check it again in about 3 hours. You can close this page. The separate .ots proof is optional for normal ProofStamp use.'
+    setOfficialOpenTimestampsVerifierLink(
+      verifyOpenTimestampsCurrentLink,
+      stamp.proofBytes,
+      preparedSnapshot.commitment,
+    )
     timestampResult.hidden = false
     setStatus(stamp.redundancy === 'reduced'
       ? 'Timestamp request accepted with reduced calendar redundancy. It is still waiting for Bitcoin.'
@@ -342,6 +375,11 @@ checkCurrentProofButton.addEventListener('click', async () => {
       receipt: checkedCurrent.receipt,
     }
     proofSha.textContent = checkedCurrent.receipt.openTimestamps.proofSha256
+    setOfficialOpenTimestampsVerifierLink(
+      verifyOpenTimestampsCurrentLink,
+      checkedCurrent.proofBytes,
+      checkedCurrent.receipt.manifestCommitmentSha256,
+    )
     if (checkedCurrent.verification) {
       timestampBadge.textContent = 'Bitcoin attestation verified'
       setStatus('Bitcoin attestation verified in the browser using a self-authenticated raw block header.')
