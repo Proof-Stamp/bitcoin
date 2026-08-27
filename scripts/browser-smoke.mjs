@@ -89,7 +89,7 @@ try {
       hidden: document.querySelector('#result').hidden,
       status: document.querySelector('#status').textContent,
       sha: document.querySelector('#file-sha').textContent,
-      commitment: document.querySelector('#manifest-commitment').textContent,
+      hasManifestUi: Boolean(document.querySelector('#manifest-commitment')),
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
     })`)
     const parsed = JSON.parse(json)
@@ -98,7 +98,7 @@ try {
 
   assert.match(outcome.status, /Both local SHA-256 methods agree/)
   assert.equal(outcome.sha, expectedSha256)
-  assert.match(outcome.commitment, /^[0-9a-f]{64}$/)
+  assert.equal(outcome.hasManifestUi, false, 'new creation flow must not expose a Manifest commitment')
   assert.equal(outcome.overflow, false, 'mobile viewport has horizontal overflow')
 
   const networkPrimitive = await evaluate(`[
@@ -106,7 +106,7 @@ try {
   ].filter((url) => !url.startsWith(${JSON.stringify(baseUrl)}))`)
   assert.deepEqual(networkPrimitive, [], 'local preparation contacted a non-local origin')
 
-  console.log('Real-browser local preparation smoke test passed')
+  console.log('Real-browser direct file local preparation smoke test passed')
 } finally {
   socket.close()
 }
