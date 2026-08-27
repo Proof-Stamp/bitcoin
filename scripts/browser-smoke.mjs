@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 
-const [baseUrl, fixturePath] = process.argv.slice(2)
-if (!baseUrl || !fixturePath) throw new Error('Usage: node scripts/browser-smoke.mjs <base-url> <fixture-path>')
+const [baseUrl, fixturePath, devtoolsBaseUrl] = process.argv.slice(2)
+if (!baseUrl || !fixturePath || !devtoolsBaseUrl) {
+  throw new Error('Usage: node scripts/browser-smoke.mjs <base-url> <fixture-path> <devtools-base-url>')
+}
 
 const expectedSha256 = '03ba204e50d126e4674c005e04d82e84c21366780af1f43bd54a37816b6ab340'
 
@@ -22,7 +24,7 @@ async function waitFor(condition, message, timeoutMs = 10_000) {
 }
 
 const targets = await waitFor(async () => {
-  const response = await fetch('http://127.0.0.1:9222/json/list')
+  const response = await fetch(`${devtoolsBaseUrl}/json/list`)
   if (!response.ok) return null
   const list = await response.json()
   return list.find((target) => target.type === 'page' && target.webSocketDebuggerUrl) ? list : null
