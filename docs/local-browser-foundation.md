@@ -2,7 +2,7 @@
 
 Status: local preparation gate implemented
 
-This document defines the local preparation step for ProofStamp via Bitcoin. The local gate still runs before any OpenTimestamps calendar submission. Networked pending-proof creation is defined separately in [Pending OpenTimestamps submission](pending-timestamp.md).
+This document defines the local preparation step for ProofStamp via Bitcoin. The local gate runs before any OpenTimestamps calendar submission. Networked pending-proof creation is defined separately in [Pending OpenTimestamps submission](pending-timestamp.md).
 
 ## Security boundary
 
@@ -21,35 +21,52 @@ The browser checks the embedded WASM bytes against the digest recorded by the bu
 
 ## File-size boundary
 
-The first browser implementation accepts one file up to 50 MiB. This is a product/runtime limit, not a Manifest v1 protocol limit.
+The first browser implementation accepts one file up to 50 MiB.
 
 The reason is explicit: Web Crypto `subtle.digest()` requires the complete input buffer. Holding a very large source file in browser memory is avoidable risk. Raising this limit requires a separate memory/performance review or a different independent hashing path.
 
-## Manifest construction
+## Direct file proof target
 
-After dual hashing succeeds, the browser creates the frozen ProofStamp Manifest v1:
+For new ProofStamps, the agreed file SHA-256 is the OpenTimestamps detached digest.
 
-- exactly one evidence entry;
-- agreed local SHA-256 and exact file size;
-- description only when supplied;
-- filename and browser-provided media type only when the user opts in.
+```text
+exact file bytes
+    |
+    v
+Web Crypto SHA-256 == Rust/WASM SHA-256
+    |
+    v
+file SHA-256
+    |
+    v
+OpenTimestamps
+```
 
-Filename preservation is off by default.
+There is no Manifest construction step in new creation.
 
-The browser then calculates the domain-separated Manifest v1 commitment already defined by the protocol specification.
+This keeps the exported `.ots` proof standard and directly interoperable with the original file in OpenTimestamps tools.
 
-## Local draft
+## Receipt v2
 
-The user may save a `proofstamp-local-draft` JSON object. It preserves:
+After a calendar accepts the timestamp request, ProofStamp creates a portable receipt v2. The receipt records:
 
-- the exact canonical manifest UTF-8 bytes as base64;
-- the Manifest v1 commitment;
-- both local SHA-256 results.
+- `proofTarget: file-sha256`;
+- the exact file SHA-256;
+- both local SHA-256 results;
+- the embedded standard `.ots` proof;
+- proof SHA-256 and bounded calendar metadata;
+- optional browser Bitcoin verification metadata after later verification.
 
-Its status is always `local-only-not-timestamped`. It contains no OpenTimestamps proof and must never be presented as timestamp evidence.
+The receipt is a convenience wrapper around the proof. It is not an additional cryptographic commitment layer.
+
+## Legacy Manifest v1
+
+Manifest v1 remains in the repository solely to verify earlier experimental receipt v1 files. Existing v1 receipts must remain fail-closed and must not be reinterpreted as direct-file proofs.
+
+New browser creation does not produce a Manifest, description binding, metadata binding, or local Manifest draft.
 
 ## Network transition
 
-The local preparation code itself performs no network request. After the local gate succeeds, the user may explicitly start the separate OpenTimestamps submission step.
+The local preparation code itself performs no network request. After the local gate succeeds, the user may explicitly start the OpenTimestamps submission step.
 
-That step is constrained to the exact reviewed calendar allowlist and CSP documented in [Pending OpenTimestamps submission](pending-timestamp.md). No source-file bytes or canonical manifest bytes are sent during that transition.
+That step is constrained to the exact reviewed calendar allowlist and CSP documented in [Pending OpenTimestamps submission](pending-timestamp.md). No source-file bytes are sent during that transition. Standard OpenTimestamps blinding prevents the bare file SHA-256 from being submitted directly to a calendar.

@@ -2,19 +2,19 @@
 
 Status: experimental v0 verification guide
 
-A completed ProofStamp is designed to remain verifiable without the ProofStamp website. The portable receipt binds the source-file fingerprint to the exact canonical ProofStamp Manifest v1 bytes, and the exported `.ots` file binds that Manifest commitment to a standard OpenTimestamps proof.
+New ProofStamps timestamp the source file's SHA-256 directly with standard OpenTimestamps. The exported `.ots` file can therefore be verified against the original file without any ProofStamp-specific Manifest step.
 
-The browser verifier is convenient, but it is not the strongest verification path. It uses Blockstream to identify the best-chain block at an attested height and records `consensusValidation: false`. The strongest supported independent path is the canonical OpenTimestamps client with a locally controlled Bitcoin Core node.
+The browser verifier is convenient, but it is not the strongest Bitcoin verification path. It uses Blockstream to identify the best-chain block at an attested height and records `consensusValidation: false`. The strongest supported independent path is the canonical OpenTimestamps client with a locally controlled Bitcoin Core node.
 
 ## What you need
 
-Keep these artifacts together when possible:
+For a new ProofStamp, keep:
 
 - the original source file;
 - `*.proofstamp-receipt.json`;
-- `*.proofstamp.ots`.
+- optionally, the exported `*.ots` proof.
 
-The receipt is the primary ProofStamp evidence artifact. The `.ots` file is the standard OpenTimestamps representation.
+The receipt already embeds the `.ots` proof. The separate `.ots` file is useful when verifying with standard OpenTimestamps tools.
 
 ## 1. Check the source-file fingerprint
 
@@ -32,92 +32,88 @@ macOS:
 shasum -a 256 FILE
 ```
 
-The result must equal both:
+For a v2 receipt, the result must equal:
 
-- `localHashAgreement.fileSha256` in the receipt;
-- `evidence[0].sha256` in the canonical Manifest v1 stored by the receipt.
+- `fileSha256`;
+- `localHashAgreement.fileSha256`;
+- `localHashAgreement.webCryptoSha256`;
+- `localHashAgreement.rustSha256`.
 
-A matching hash proves that the file bytes being checked are the bytes committed by the receipt. It does not prove authorship, truth, location, or original creation time.
+A matching hash proves that the file bytes being checked are the bytes identified by the receipt. It does not prove authorship, truth, location, or original creation time.
 
-## 2. Recompute the Manifest commitment
+## 2. Verify the standard OpenTimestamps proof against the file
 
-The receipt stores the exact canonical Manifest v1 bytes as base64 in `canonicalManifestUtf8Base64`.
+Install the canonical OpenTimestamps client.
 
-The commitment rule is:
+Inspect the exported proof:
+
+```bash
+ots info FILE.ots
+```
+
+The detached SHA-256 digest reported by the `.ots` file must equal the original file's SHA-256 and the receipt's `fileSha256`.
+
+A pending proof can be upgraded independently of ProofStamp:
+
+```bash
+ots upgrade FILE.ots
+```
+
+Then verify it directly against the original file:
+
+```bash
+ots verify FILE.ots -f FILE
+```
+
+The exact CLI spelling can vary by OpenTimestamps client version; `ots verify --help` is authoritative for the installed client. The important invariant is that the v2 `.ots` digest is the source-file SHA-256 itself.
+
+You can also use the official browser verifier at OpenTimestamps.org by supplying the original file together with its `.ots` proof.
+
+## 3. Verify against your own Bitcoin Core node
+
+With Bitcoin Core running and RPC credentials available, use the canonical OpenTimestamps client with your node when independent Bitcoin consensus selection matters.
+
+A detached-digest verification can use the receipt's exact file SHA-256:
+
+```bash
+ots --bitcoin-node http://USER:PASS@127.0.0.1:8332/ verify \
+  -d FILE_SHA256 \
+  FILE.ots
+```
+
+Use the exact `fileSha256` value from the receipt.
+
+This path asks your own Bitcoin Core node for the relevant Bitcoin block data. It therefore does not depend on ProofStamp's browser Bitcoin provider for consensus selection.
+
+## Legacy Manifest-v1 receipts
+
+Receipt version 1 used a different proof target. Its `.ots` file timestamps a domain-separated ProofStamp Manifest commitment, not the raw source-file SHA-256.
+
+For a v1 receipt:
+
+1. independently hash the source file and compare it with `localHashAgreement.fileSha256`;
+2. decode `canonicalManifestUtf8Base64` and confirm its evidence hash matches the source-file SHA-256;
+3. recompute:
 
 ```text
 SHA256(UTF8("PROOFSTAMP-MANIFEST-V1") || 0x00 || canonical_manifest_bytes)
 ```
 
-This Python example recomputes the commitment directly from a saved receipt:
+4. confirm the result equals `manifestCommitmentSha256`;
+5. verify the legacy `.ots` against that Manifest commitment, not directly against the original file.
 
-```bash
-python3 - RECEIPT.proofstamp-receipt.json <<'PY'
-import base64
-import hashlib
-import json
-import sys
-
-with open(sys.argv[1], "r", encoding="utf-8") as handle:
-    receipt = json.load(handle)
-
-manifest = base64.b64decode(receipt["canonicalManifestUtf8Base64"], validate=True)
-commitment = hashlib.sha256(b"PROOFSTAMP-MANIFEST-V1\x00" + manifest).hexdigest()
-print(commitment)
-
-if commitment != receipt["manifestCommitmentSha256"]:
-    raise SystemExit("Manifest commitment mismatch")
-PY
-```
-
-The printed value must equal `manifestCommitmentSha256` in the receipt.
-
-This small example checks the cryptographic commitment. The ProofStamp application additionally applies the strict receipt schema, duplicate-key rejection, canonical Manifest checks, size limits, and OpenTimestamps parser limits documented in this repository.
-
-## 3. Check the standard OpenTimestamps proof
-
-Install the canonical OpenTimestamps client, then inspect the exported proof:
-
-```bash
-ots info FILE.proofstamp.ots
-```
-
-The first line reports the detached SHA-256 digest recorded by the `.ots` file. That digest must equal the receipt's `manifestCommitmentSha256`.
-
-A pending proof can be upgraded independently of ProofStamp:
-
-```bash
-ots upgrade FILE.proofstamp.ots
-```
-
-Upgrading may contact OpenTimestamps calendars to obtain the path from a pending calendar attestation to Bitcoin. Keep the upgraded `.ots` file.
-
-## 4. Verify against your own Bitcoin Core node
-
-The canonical OpenTimestamps client accepts the Manifest commitment directly as a hex digest, so no ProofStamp-specific target file is required for this step.
-
-With Bitcoin Core running and RPC credentials available:
-
-```bash
-ots --bitcoin-node http://USER:PASS@127.0.0.1:8332/ verify \
-  -d MANIFEST_COMMITMENT_SHA256 \
-  FILE.proofstamp.ots
-```
-
-Use the exact `manifestCommitmentSha256` value from the receipt.
-
-This verification path asks your own Bitcoin Core node for the relevant Bitcoin block data. It therefore does not depend on ProofStamp's browser Bitcoin provider for consensus selection.
+Existing v1 receipts remain supported by the ProofStamp browser. They must never be reinterpreted as v2 direct-file proofs.
 
 ## What a successful end-to-end check supports
 
-If all of these agree:
+For a v2 receipt, if these agree:
 
 1. the independently calculated source-file SHA-256;
-2. the canonical Manifest bytes and recomputed Manifest commitment;
+2. the receipt's `fileSha256`;
 3. the detached digest in the standard `.ots` proof;
 4. the Bitcoin attestation verified by the canonical OpenTimestamps client against your Bitcoin Core node;
 
-then the evidence supports the claim that the committed digital state existed no later than the verified Bitcoin anchoring block.
+then the evidence supports the claim that a commitment to those exact file bytes existed no later than the verified Bitcoin anchoring block.
 
 It does not by itself prove truth, authorship, location, original creation time, or whether the file was edited before it was stamped.
 

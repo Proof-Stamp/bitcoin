@@ -9,6 +9,8 @@ const independent = await read('../docs/independent-verification.md')
 const deployment = await read('../docs/deployment-and-product-boundary.md')
 const release = await read('../docs/experimental-release.md')
 const rustBuild = await read('../scripts/build-rust-hasher.sh')
+const browserSmokeRunner = await read('../scripts/run-browser-smoke.sh')
+const browserSmoke = await read('../scripts/browser-smoke.mjs')
 
 test('README identifies the current roadmap phase and independent verification guide', () => {
   assert.match(readme, /Phase 6: static Cloudflare Pages deployment and experimental release/)
@@ -16,12 +18,14 @@ test('README identifies the current roadmap phase and independent verification g
   assert.match(readme, /consensusValidation: false/)
 })
 
-test('independent verification guide preserves the Manifest v1 and Bitcoin Core boundaries', () => {
-  assert.match(independent, /PROOFSTAMP-MANIFEST-V1\\x00/)
-  assert.match(independent, /ots info FILE\.proofstamp\.ots/)
-  assert.match(independent, /ots upgrade FILE\.proofstamp\.ots/)
-  assert.match(independent, /ots --bitcoin-node http:\/\/USER:PASS@127\.0\.0\.1:8332\/ verify/)
-  assert.match(independent, /-d MANIFEST_COMMITMENT_SHA256/)
+test('independent verification guide makes direct file v2 primary and preserves legacy v1', () => {
+  assert.match(independent, /timestamp the source file's SHA-256 directly/i)
+  assert.match(independent, /ots info FILE\.ots/)
+  assert.match(independent, /ots upgrade FILE\.ots/)
+  assert.match(independent, /-d FILE_SHA256/)
+  assert.match(independent, /PROOFSTAMP-MANIFEST-V1/)
+  assert.match(independent, /0x00/)
+  assert.match(independent, /Legacy Manifest-v1 receipts/)
   assert.match(independent, /consensusValidation: false/)
 })
 
@@ -39,6 +43,15 @@ test('Cloudflare Rust bootstrap is narrow, pinned, and checksum-verified', () =>
   assert.match(rustBuild, /rust-toolchain\.toml/)
   assert.match(rustBuild, /sha256sum --check --status/)
   assert.match(rustBuild, /if ! command -v rustup/)
+})
+
+test('real-browser smoke lets Chrome choose an unused DevTools port', () => {
+  assert.match(browserSmokeRunner, /--remote-debugging-port=0/)
+  assert.match(browserSmokeRunner, /DevToolsActivePort/)
+  assert.match(browserSmokeRunner, /env -u DBUS_SESSION_BUS_ADDRESS/)
+  assert.doesNotMatch(browserSmokeRunner, /--remote-debugging-port=9222/)
+  assert.doesNotMatch(browserSmoke, /127\.0\.0\.1:9222/)
+  assert.match(browserSmoke, /devtoolsBaseUrl/)
 })
 
 test('experimental release checklist requires green protected checks and a production smoke test', () => {

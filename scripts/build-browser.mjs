@@ -9,7 +9,7 @@ await rm(dist, { recursive: true, force: true })
 await mkdir(dist, { recursive: true })
 await mkdir(new URL('vendor/', dist), { recursive: true })
 
-for (const name of ['index.html', 'styles.css', 'app.js', '_headers']) {
+for (const name of ['index.html', 'styles.css', 'app.js', 'verify-ux.js', 'proofstamp-logo.svg', '_headers']) {
   await cp(new URL(name, app), new URL(name, dist))
 }
 for (const name of [
@@ -20,6 +20,8 @@ for (const name of [
   'local-draft-v1.js',
   'pending-receipt-v1.js',
   'receipt-verify-v1.js',
+  'receipt-v2.js',
+  'receipt-verify.js',
   'network-policy.js',
 ]) {
   await cp(new URL(name, src), new URL(name, dist))

@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 
-const [baseUrl, fixturePath] = process.argv.slice(2)
-if (!baseUrl || !fixturePath) throw new Error('Usage: node scripts/browser-smoke.mjs <base-url> <fixture-path>')
+const [baseUrl, fixturePath, devtoolsBaseUrl] = process.argv.slice(2)
+if (!baseUrl || !fixturePath || !devtoolsBaseUrl) {
+  throw new Error('Usage: node scripts/browser-smoke.mjs <base-url> <fixture-path> <devtools-base-url>')
+}
 
 const expectedSha256 = '03ba204e50d126e4674c005e04d82e84c21366780af1f43bd54a37816b6ab340'
 
@@ -22,7 +24,7 @@ async function waitFor(condition, message, timeoutMs = 10_000) {
 }
 
 const targets = await waitFor(async () => {
-  const response = await fetch('http://127.0.0.1:9222/json/list')
+  const response = await fetch(`${devtoolsBaseUrl}/json/list`)
   if (!response.ok) return null
   const list = await response.json()
   return list.find((target) => target.type === 'page' && target.webSocketDebuggerUrl) ? list : null
@@ -85,18 +87,18 @@ try {
   const outcome = await waitFor(async () => {
     const json = await evaluate(`JSON.stringify({
       hidden: document.querySelector('#result').hidden,
-      status: document.querySelector('#status').textContent,
+      resultText: document.querySelector('#result').textContent,
       sha: document.querySelector('#file-sha').textContent,
-      commitment: document.querySelector('#manifest-commitment').textContent,
+      hasManifestUi: Boolean(document.querySelector('#manifest-commitment')),
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
     })`)
     const parsed = JSON.parse(json)
-    return parsed.hidden ? null : parsed
+    return parsed.hidden || parsed.sha !== expectedSha256 ? null : parsed
   }, 'Local dual-hash flow did not complete', 20_000)
 
-  assert.match(outcome.status, /Both local SHA-256 methods agree/)
+  assert.match(outcome.resultText, /Two independent SHA-256 checks match/)
   assert.equal(outcome.sha, expectedSha256)
-  assert.match(outcome.commitment, /^[0-9a-f]{64}$/)
+  assert.equal(outcome.hasManifestUi, false, 'new creation flow must not expose a Manifest commitment')
   assert.equal(outcome.overflow, false, 'mobile viewport has horizontal overflow')
 
   const networkPrimitive = await evaluate(`[
@@ -104,7 +106,7 @@ try {
   ].filter((url) => !url.startsWith(${JSON.stringify(baseUrl)}))`)
   assert.deepEqual(networkPrimitive, [], 'local preparation contacted a non-local origin')
 
-  console.log('Real-browser local preparation smoke test passed')
+  console.log('Real-browser direct file local preparation smoke test passed')
 } finally {
   socket.close()
 }

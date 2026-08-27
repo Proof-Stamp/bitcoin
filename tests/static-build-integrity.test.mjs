@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
-const appFiles = ['index.html', 'styles.css', 'app.js', '_headers']
+const appFiles = ['index.html', 'styles.css', 'app.js', 'verify-ux.js', 'proofstamp-logo.svg', '_headers']
 const copiedSourceFiles = [
   'manifest-v1.js',
   'local-hash.js',
@@ -12,6 +12,8 @@ const copiedSourceFiles = [
   'local-draft-v1.js',
   'pending-receipt-v1.js',
   'receipt-verify-v1.js',
+  'receipt-v2.js',
+  'receipt-verify.js',
   'network-policy.js',
 ]
 const rewrittenSourceFiles = ['ots-stamp.js', 'ots-upgrade-verify.js']
@@ -69,8 +71,16 @@ test('static HTML keeps mobile viewport, live status regions, explicit labels, a
   const html = await text(new URL('../dist/index.html', import.meta.url))
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/)
   assert.match(html, /aria-live="polite"/)
-  assert.match(html, /<label[^>]*class="field"/)
-  assert.match(html, /for="saved-receipt"|<label[^>]*>[\s\S]*id="saved-receipt"/)
+  assert.match(html, /<label[^>]*class="field/)
+  assert.match(html, /id="saved-receipt"/)
   assert.doesNotMatch(html, /<script[^>]+src="https?:\/\//i)
   assert.doesNotMatch(html, /<link[^>]+href="https?:\/\//i)
+})
+
+test('header brand uses the local official ProofStamp logo asset', async () => {
+  const css = await text(new URL('../dist/styles.css', import.meta.url))
+  const logo = await text(new URL('../dist/proofstamp-logo.svg', import.meta.url))
+  assert.match(css, /proofstamp-logo\.svg/)
+  assert.match(logo, /viewBox="0 0 740 740"/)
+  assert.match(logo, /fill="#162d52"/)
 })

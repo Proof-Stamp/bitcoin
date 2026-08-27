@@ -1,32 +1,51 @@
 # Pending proof upgrade and Bitcoin verification
 
-Status: Phase 4 browser implementation
+Status: Phase 4 browser implementation, updated for receipt v2
 
-This phase lets a user reopen a saved ProofStamp receipt, validate its internal bindings locally, ask approved OpenTimestamps calendars for a more complete proof, and verify a Bitcoin attestation when one is present.
+This flow lets a user reopen a saved ProofStamp receipt, validate its internal bindings locally, ask approved OpenTimestamps calendars for a more complete proof, and verify a Bitcoin attestation when one is present.
 
 ## Imported receipt validation
 
 The browser treats every saved receipt and embedded `.ots` proof as untrusted input.
 
-Before network access, the receipt must pass all of these checks:
+Before network access, every receipt must pass common checks:
 
 - receipt size is bounded;
 - supported ProofStamp receipt format/version/status only;
-- exact canonical Manifest v1 bytes parse successfully;
-- the domain-separated Manifest commitment recomputes to the receipt value;
-- the locally recorded file SHA-256 matches the committed Manifest evidence item;
+- duplicate JSON keys and unknown fields are rejected;
 - the embedded `.ots` proof is bounded and parses fail-closed;
 - the embedded proof SHA-256 matches the receipt;
-- the detached `.ots` file digest equals the Manifest commitment;
-- SHA-256 is the detached proof hash algorithm.
+- SHA-256 is the detached proof hash algorithm;
+- receipt and proof metadata are internally consistent.
 
-A receipt that fails any binding check is not upgraded or verified.
+### Receipt v2
+
+For new receipt v2 proofs:
+
+- `proofTarget` must be `file-sha256`;
+- `fileSha256`, `localHashAgreement.fileSha256`, `webCryptoSha256`, and `rustSha256` must all match exactly;
+- the detached `.ots` file digest must equal that same `fileSha256`.
+
+If the user supplies the original/candidate file, ProofStamp hashes it locally with both SHA-256 implementations and requires the result to equal the receipt `fileSha256` before any calendar or Bitcoin request is made.
+
+### Legacy receipt v1
+
+For earlier receipt v1 proofs, the frozen Manifest-v1 checks remain in force:
+
+- exact canonical Manifest v1 bytes parse successfully;
+- the domain-separated Manifest commitment recomputes to the receipt value;
+- the recorded source-file SHA-256 matches the Manifest evidence item;
+- the detached `.ots` file digest equals the Manifest commitment.
+
+A v1 receipt is never reinterpreted as a direct-file v2 proof.
+
+A receipt that fails any required binding check is not upgraded or verified.
 
 ## Upgrade network policy
 
 Imported proof data cannot introduce a network destination.
 
-Pending calendar attestations are queried only when their URI resolves to one of the exact approved origins in `src/network-policy.js`:
+Pending calendar attestations are queried only when their URI resolves to one of the exact approved upgrade origins in `src/network-policy.js`:
 
 - `https://alice.btc.calendar.opentimestamps.org`
 - `https://bob.btc.calendar.opentimestamps.org`
@@ -50,7 +69,7 @@ For the attested block height it retrieves:
 
 The returned header is self-authenticated in the browser by computing Bitcoin's double-SHA-256 header hash and requiring it to equal the block hash returned for the height. The OpenTimestamps attestation is then checked against the raw header's internal-order Merkle root and declared block height.
 
-A successful result therefore establishes that the OpenTimestamps commitment matches the raw header supplied for the explorer's best-chain block at that height.
+For receipt v2, the root of the OpenTimestamps operation path is the source-file SHA-256 itself. For legacy v1, it is the Manifest commitment.
 
 ## Important trust boundary
 
@@ -67,22 +86,24 @@ The strongest independent verification path remains standard OpenTimestamps tool
 
 ## Receipt update
 
-After an upgrade check, the user can save an updated receipt and `.ots` proof.
+After an upgrade check, the user can save the receipt and `.ots` proof.
 
 A still-pending receipt remains `pending`.
 
 After successful browser Bitcoin-attestation verification, the receipt status becomes `bitcoin-attestation-verified` and records the verified block height, block hash, block time, verification method, and `consensusValidation: false`.
+
+The proof target does not change during upgrade. A v2 receipt remains directly bound to `fileSha256`; a v1 receipt remains bound to its Manifest commitment.
 
 Bitcoin block time is evidence about the anchoring block, not an exact file creation timestamp.
 
 ## Network and privacy properties
 
 - source files are never uploaded;
-- canonical Manifest bytes are never uploaded;
 - saved receipts are read locally;
+- candidate-file mismatch fails before network access;
 - only exact origins in `src/network-policy.js` can receive browser requests;
 - redirects are rejected;
 - credentials are omitted;
 - referrers are suppressed;
 - response sizes and request timeouts are bounded;
-- no ProofStamp account, wallet, backend, proof database, analytics call, or email handoff is introduced by this phase.
+- no ProofStamp account, wallet, backend, proof database, analytics call, or email handoff is introduced by this flow.
