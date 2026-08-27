@@ -245,6 +245,26 @@ function assertHashAgreement(agreement) {
   ) throw new Error('Receipt local hash agreement is invalid')
 }
 
+function normalizeCreationHashAgreement(hashAgreement) {
+  assertPlainObject(hashAgreement, 'Local hash result')
+  if (Object.hasOwn(hashAgreement, 'agreed') && hashAgreement.agreed !== true) {
+    throw new Error('Local SHA-256 checks did not agree')
+  }
+  if (
+    Object.hasOwn(hashAgreement, 'fileSha256') && Object.hasOwn(hashAgreement, 'sha256') &&
+    hashAgreement.fileSha256 !== hashAgreement.sha256
+  ) throw new Error('Local SHA-256 result is inconsistent')
+
+  const normalized = Object.freeze({
+    algorithm: hashAgreement.algorithm,
+    fileSha256: hashAgreement.fileSha256 ?? hashAgreement.sha256,
+    webCryptoSha256: hashAgreement.webCryptoSha256,
+    rustSha256: hashAgreement.rustSha256,
+  })
+  assertHashAgreement(normalized)
+  return normalized
+}
+
 function assertReceiptV2Shape(receipt) {
   const required = new Set(['format', 'version', 'status', 'target', 'proofTarget', 'fileSha256', 'localHashAgreement', 'openTimestamps'])
   assertAllowedKeys(receipt, TOP_LEVEL_KEYS, required, 'Receipt')
@@ -281,9 +301,9 @@ function assertVerificationResult(verification) {
 }
 
 export async function createPendingReceiptV2(hashAgreement, stampResult, subtle = globalThis.crypto?.subtle) {
-  assertHashAgreement(hashAgreement)
+  const localHashAgreement = normalizeCreationHashAgreement(hashAgreement)
   if (stampResult?.status !== 'pending' || !(stampResult.proofBytes instanceof Uint8Array)) throw new Error('A valid pending OpenTimestamps result is required')
-  if (stampResult.fileSha256 !== hashAgreement.fileSha256 || stampResult.digestSha256 !== hashAgreement.fileSha256) {
+  if (stampResult.fileSha256 !== localHashAgreement.fileSha256 || stampResult.digestSha256 !== localHashAgreement.fileSha256) {
     throw new Error('Pending proof does not match the file SHA-256')
   }
   if (!Array.isArray(stampResult.calendarsAccepted) || stampResult.calendarsAccepted.length < 1) throw new Error('At least one accepted calendar is required')
@@ -294,8 +314,8 @@ export async function createPendingReceiptV2(hashAgreement, stampResult, subtle 
     status: 'pending',
     target: 'bitcoin',
     proofTarget: 'file-sha256',
-    fileSha256: hashAgreement.fileSha256,
-    localHashAgreement: hashAgreement,
+    fileSha256: localHashAgreement.fileSha256,
+    localHashAgreement,
     openTimestamps: {
       proofBase64: bytesToBase64(stampResult.proofBytes),
       proofSha256: await sha256Hex(stampResult.proofBytes, subtle),
