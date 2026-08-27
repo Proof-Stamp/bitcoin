@@ -28,7 +28,7 @@
       <ul class="trust-list" aria-label="ProofStamp properties">
         <li><span>✓</span>Files stay local</li>
         <li><span>✓</span>Standard OpenTimestamps proof</li>
-        <li><span>✓</span>Bitcoin anchored</li>
+        <li><span>✓</span>Anchors to Bitcoin</li>
       </ul>
     </section>
 
@@ -53,7 +53,7 @@
               <input id="file" name="file" type="file" required>
               <small>One file, up to 50 MiB.</small>
             </label>
-            <button id="prepare-button" class="primary full-button" type="submit">Check file locally</button>
+            <button id="prepare-button" class="primary full-button" type="submit">Check file</button>
           </form>
           <p id="status" class="status" role="status" aria-live="polite"></p>
         </section>
@@ -61,22 +61,23 @@
         <section id="result" class="stage" hidden aria-labelledby="result-heading">
           <div class="stage-heading">
             <div>
-              <p class="ok">✓ File checked locally</p>
-              <h2 id="result-heading">Timestamp this file</h2>
+              <p class="ok">✓ File ready</p>
+              <h2 id="result-heading">Ready to timestamp</h2>
             </div>
-            <span class="badge">Not submitted yet</span>
+            <span class="badge">Nothing sent yet</span>
           </div>
 
           <div class="hash-status">
-            <strong>Two local SHA-256 checks agree.</strong>
+            <strong>Two independent SHA-256 checks match.</strong>
             <details class="inline-details">
-              <summary>See file fingerprint</summary>
+              <summary>See fingerprint</summary>
               <code id="file-sha"></code>
             </details>
           </div>
 
-          <button id="submit-timestamp" class="primary full-button" type="button">Create timestamp proof</button>
-          <p class="privacy-note">Only a blinded form of the file fingerprint is sent to the approved OpenTimestamps calendars.</p>
+          <button id="submit-timestamp" class="primary full-button" type="button">Timestamp file</button>
+          <p id="timestamp-action-status" class="status" role="status" aria-live="polite"></p>
+          <p class="privacy-note">Only a blinded fingerprint is sent to OpenTimestamps. Your file stays on this device.</p>
           <a class="text-link" href="./">Start over</a>
         </section>
 
@@ -84,13 +85,13 @@
           <div class="success-mark" aria-hidden="true">✓</div>
           <div class="stage-heading">
             <div>
-              <p class="ok">Timestamp request accepted</p>
+              <p class="ok">Timestamp proof created</p>
               <h2 id="timestamp-heading">Save your ProofStamp receipt</h2>
             </div>
             <span id="timestamp-badge" class="badge">Waiting for Bitcoin</span>
           </div>
 
-          <p class="success-intro">Save the receipt. You can close this page and check it again in about 3 hours.</p>
+          <p class="success-intro">Save the receipt now. Bitcoin anchoring can take a few hours. You can close this page and check again later.</p>
           <button id="download-receipt" class="primary full-button" type="button">Save ProofStamp receipt</button>
 
           <div class="share-note">
@@ -100,7 +101,7 @@
 
           <button id="check-current-proof" type="button" class="secondary full-button">Check Bitcoin status</button>
           <p id="timestamp-note" class="privacy-note"></p>
-          <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Keep the receipt and check again later.</p>
+          <p class="warning-note"><strong>Bitcoin anchoring is still pending.</strong> This ProofStamp is not Bitcoin-verified yet.</p>
 
           <details class="advanced-details">
             <summary>Independent OpenTimestamps proof</summary>
