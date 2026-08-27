@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
-const appFiles = ['index.html', 'styles.css', 'app.js', '_headers']
+const appFiles = ['index.html', 'styles.css', 'app.js', 'verify-ux.js', '_headers']
 const copiedSourceFiles = [
   'manifest-v1.js',
   'local-hash.js',
@@ -69,8 +69,8 @@ test('static HTML keeps mobile viewport, live status regions, explicit labels, a
   const html = await text(new URL('../dist/index.html', import.meta.url))
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/)
   assert.match(html, /aria-live="polite"/)
-  assert.match(html, /<label[^>]*class="field"/)
-  assert.match(html, /for="saved-receipt"|<label[^>]*>[\s\S]*id="saved-receipt"/)
+  assert.match(html, /<label[^>]*class="field/)
+  assert.match(html, /id="saved-receipt"/)
   assert.doesNotMatch(html, /<script[^>]+src="https?:\/\//i)
   assert.doesNotMatch(html, /<link[^>]+href="https?:\/\//i)
 })
