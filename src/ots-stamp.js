@@ -26,9 +26,9 @@ function bytesEqual(a, b) {
   return different === 0
 }
 
-function validateCommitmentHex(value) {
+function validateSha256Hex(value, label = 'SHA-256 digest') {
   const hex = String(value || '').trim().toLowerCase()
-  if (!/^[0-9a-f]{64}$/.test(hex)) throw new TypeError('Manifest commitment must be a 64-character SHA-256 hex string')
+  if (!/^[0-9a-f]{64}$/.test(hex)) throw new TypeError(`${label} must be a 64-character SHA-256 hex string`)
   return hex
 }
 
@@ -107,26 +107,26 @@ export class CalendarSubmissionError extends Error {
   }
 }
 
-export async function createPendingTimestamp(
-  manifestCommitmentSha256,
+async function createPendingTimestampForDigest(
+  digestSha256,
   {
     fetchImpl = globalThis.fetch,
     randomValues = globalThis.crypto?.getRandomValues?.bind(globalThis.crypto),
     timeoutMs = OTS_CALENDAR_TIMEOUT_MS,
   } = {},
 ) {
-  const commitmentHex = validateCommitmentHex(manifestCommitmentSha256)
+  const digestHex = validateSha256Hex(digestSha256)
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) throw new RangeError('Invalid calendar timeout')
 
-  const commitment = hexToBytes(commitmentHex)
-  const detached = DetachedTimestampFile.fromHash(new OpSHA256(), commitment)
+  const digest = hexToBytes(digestHex)
+  const detached = DetachedTimestampFile.fromHash(new OpSHA256(), digest)
 
   const nonceAppended = detached.timestamp.add(new OpAppend(randomNonce(randomValues)))
   const blinded = nonceAppended.add(new OpSHA256())
   const merkleTip = makeMerkleTree([blinded])
   const submissionDigest = merkleTip.getDigest()
 
-  if (bytesEqual(submissionDigest, commitment)) throw new Error('OpenTimestamps blinding failed closed')
+  if (bytesEqual(submissionDigest, digest)) throw new Error('OpenTimestamps blinding failed closed')
 
   const settled = await Promise.allSettled(
     APPROVED_OTS_CALENDARS.map((calendar) => submitCalendar(calendar, submissionDigest, fetchImpl, timeoutMs)),
@@ -154,15 +154,29 @@ export async function createPendingTimestamp(
 
   const proofBytes = detached.serializeToBytes()
   const reparsed = DetachedTimestampFile.deserialize(proofBytes)
-  if (!bytesEqual(reparsed.fileDigest(), commitment)) throw new Error('Generated OpenTimestamps proof is not bound to the Manifest commitment')
+  if (!bytesEqual(reparsed.fileDigest(), digest)) throw new Error('Generated OpenTimestamps proof is not bound to the requested SHA-256 digest')
 
   return Object.freeze({
     status: 'pending',
-    manifestCommitmentSha256: commitmentHex,
+    digestSha256: digestHex,
     proofBytes,
     calendarsAttempted: APPROVED_OTS_CALENDARS,
     calendarsAccepted: Object.freeze([...accepted]),
     calendarsFailed: Object.freeze(failed.map(({ calendar }) => calendar)),
     redundancy: accepted.length >= 2 ? 'normal' : 'reduced',
   })
+}
+
+export async function createPendingFileTimestamp(fileSha256, options = {}) {
+  const result = await createPendingTimestampForDigest(validateSha256Hex(fileSha256, 'File SHA-256'), options)
+  return Object.freeze({ ...result, fileSha256: result.digestSha256 })
+}
+
+// Legacy Manifest-v1 creation API retained for compatibility with existing tests/tools.
+export async function createPendingTimestamp(manifestCommitmentSha256, options = {}) {
+  const result = await createPendingTimestampForDigest(
+    validateSha256Hex(manifestCommitmentSha256, 'Manifest commitment'),
+    options,
+  )
+  return Object.freeze({ ...result, manifestCommitmentSha256: result.digestSha256 })
 }
