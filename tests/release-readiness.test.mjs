@@ -18,12 +18,13 @@ test('README identifies the current roadmap phase and independent verification g
   assert.match(readme, /consensusValidation: false/)
 })
 
-test('independent verification guide preserves the Manifest v1 and Bitcoin Core boundaries', () => {
+test('independent verification guide makes direct file v2 primary and preserves legacy v1', () => {
+  assert.match(independent, /timestamp the source file's SHA-256 directly/i)
+  assert.match(independent, /ots info FILE\.ots/)
+  assert.match(independent, /ots upgrade FILE\.ots/)
+  assert.match(independent, /-d FILE_SHA256/)
   assert.match(independent, /PROOFSTAMP-MANIFEST-V1\\x00/)
-  assert.match(independent, /ots info FILE\.proofstamp\.ots/)
-  assert.match(independent, /ots upgrade FILE\.proofstamp\.ots/)
-  assert.match(independent, /ots --bitcoin-node http:\/\/USER:PASS@127\.0\.0\.1:8332\/ verify/)
-  assert.match(independent, /-d MANIFEST_COMMITMENT_SHA256/)
+  assert.match(independent, /Legacy Manifest-v1 receipts/)
   assert.match(independent, /consensusValidation: false/)
 })
 
