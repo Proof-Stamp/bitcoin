@@ -11,7 +11,7 @@ import { BLOCKSTREAM_ESPLORA_API, UPGRADE_CALENDARS } from './network-policy.js'
 
 export const MAX_IMPORTED_OTS_BYTES = 128 * 1024
 export const MAX_PROOF_ATTESTATIONS = 128
-export const MAX_PROOF_TREE_DEPTH = 64
+export const MAX_PROOF_TREE_DEPTH = 240
 export const MAX_PROOF_OPERATIONS = 1024
 export const MAX_PROOF_NODES = 2048
 export const MAX_UPGRADE_QUERIES = 16
