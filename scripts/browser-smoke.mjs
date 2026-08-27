@@ -87,16 +87,16 @@ try {
   const outcome = await waitFor(async () => {
     const json = await evaluate(`JSON.stringify({
       hidden: document.querySelector('#result').hidden,
-      status: document.querySelector('#status').textContent,
+      resultText: document.querySelector('#result').textContent,
       sha: document.querySelector('#file-sha').textContent,
       hasManifestUi: Boolean(document.querySelector('#manifest-commitment')),
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
     })`)
     const parsed = JSON.parse(json)
-    return parsed.hidden ? null : parsed
+    return parsed.hidden || parsed.sha !== expectedSha256 ? null : parsed
   }, 'Local dual-hash flow did not complete', 20_000)
 
-  assert.match(outcome.status, /Both local SHA-256 methods agree/)
+  assert.match(outcome.resultText, /Two independent SHA-256 checks match/)
   assert.equal(outcome.sha, expectedSha256)
   assert.equal(outcome.hasManifestUi, false, 'new creation flow must not expose a Manifest commitment')
   assert.equal(outcome.overflow, false, 'mobile viewport has horizontal overflow')
