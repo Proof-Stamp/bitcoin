@@ -11,11 +11,12 @@
   <main class="shell">
     <header class="hero">
       <p class="eyebrow">ProofStamp via Bitcoin</p>
-      <h1>Create a verifiable timestamp without uploading your file.</h1>
-      <p>Choose a file. ProofStamp checks its fingerprint locally with two independent SHA-256 implementations, then submits only a blinded commitment through OpenTimestamps.</p>
+      <h1>Create or verify a ProofStamp without uploading your file.</h1>
+      <p>Create a ProofStamp for a file, or verify a file you received against its ProofStamp receipt. File hashing happens on this device.</p>
     </header>
 
     <section class="card" aria-labelledby="prepare-heading">
+      <p class="eyebrow">Create a ProofStamp</p>
       <h2 id="prepare-heading">1. Choose and check the file</h2>
       <form id="prepare-form">
         <label class="field">
@@ -90,24 +91,28 @@
       </div>
       <p id="timestamp-note" class="privacy-note"></p>
       <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Save your receipt, then you can close this page. Check the receipt again in about 3 hours. The receipt already contains the timestamp proof; saving the separate .ots file is optional and useful for independent verification.</p>
+      <p class="privacy-note"><strong>To let someone else verify this record:</strong> send them the original file and its ProofStamp receipt.</p>
     </section>
 
     <section class="card verify-card" aria-labelledby="saved-heading">
-      <p class="eyebrow">Already have a receipt?</p>
-      <h2 id="saved-heading">Verify a file or check a saved ProofStamp</h2>
-      <p class="section-copy">Choose the saved receipt. To verify the original file, choose that file too. The browser checks both locally before asking approved calendars for timestamp updates or checking any Bitcoin attestation.</p>
+      <p class="eyebrow">Verify a ProofStamp</p>
+      <h2 id="saved-heading">Verify a file with its ProofStamp receipt</h2>
+      <p class="section-copy">You need two files: the file you want to verify and its <code>.proofstamp-receipt.json</code>. ProofStamp checks the file fingerprint and receipt locally first. Only after they match does it check timestamp updates and any Bitcoin attestation.</p>
+      <label class="field">
+        <span>File to verify</span>
+        <input id="saved-original-file" type="file">
+        <small>Choose the original file, or the copy you received. It stays on this device.</small>
+      </label>
       <label class="field">
         <span>ProofStamp receipt</span>
         <input id="saved-receipt" type="file" accept="application/json,.json">
-        <small>The receipt is read locally. It is not uploaded to ProofStamp.</small>
+        <small>Choose the matching <code>.proofstamp-receipt.json</code>. The receipt is read locally.</small>
       </label>
-      <label class="field">
-        <span>File to verify <em>optional</em></span>
-        <input id="saved-original-file" type="file">
-        <small>Choose the original file, or any file you want to compare with this ProofStamp. It stays on this device.</small>
-      </label>
-      <button id="check-saved-proof" type="button">Check ProofStamp</button>
-      <p class="privacy-note">Add the file when you want to confirm that its exact bytes match the fingerprint recorded in the receipt.</p>
+      <div class="actions">
+        <button id="check-saved-proof" type="button">Verify file + ProofStamp</button>
+        <button id="check-receipt-only" type="button" class="secondary">Check receipt status only</button>
+      </div>
+      <p class="privacy-note">Neither file is uploaded to ProofStamp. A mismatched file stops locally before any calendar or Bitcoin request is made.</p>
       <p id="saved-status" class="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -121,17 +126,23 @@
       </div>
       <dl class="details">
         <div id="verified-file-row" hidden><dt>File SHA-256</dt><dd><code id="verified-file-sha"></code></dd></div>
-        <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
         <div id="verified-height-row" hidden><dt>Bitcoin block height</dt><dd id="verified-height"></dd></div>
         <div id="verified-hash-row" hidden><dt>Bitcoin block hash</dt><dd><code id="verified-block-hash"></code></dd></div>
         <div id="verified-time-row" hidden><dt>Bitcoin block time</dt><dd id="verified-block-time"></dd></div>
         <div><dt>Verification method</dt><dd id="verification-method">OpenTimestamps + Blockstream raw block header</dd></div>
       </dl>
+      <details>
+        <summary>Technical details</summary>
+        <dl class="details">
+          <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
+        </dl>
+      </details>
       <div class="actions">
         <button id="save-checked-receipt" type="button">Save updated receipt</button>
         <button id="save-checked-proof" type="button" class="secondary">Save updated .ots proof</button>
       </div>
       <p id="verification-note" class="warning-note"></p>
+      <p class="privacy-note">ProofStamp can verify that these exact file bytes match the timestamped record. It does not prove who created the file, whether its contents are true, or when the file was originally created.</p>
       <p class="warning-note"><strong>Browser verification is a convenience check.</strong> It verifies the OpenTimestamps Bitcoin attestation against a raw block header fetched through Blockstream. It is not equivalent to independently validating Bitcoin consensus with your own Bitcoin Core node.</p>
     </section>
 
