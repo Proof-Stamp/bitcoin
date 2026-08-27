@@ -9,16 +9,18 @@ const verifyUx = await readFile(new URL('../app/verify-ux.js', import.meta.url),
 const styles = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8')
 const headers = await readFile(new URL('../app/_headers', import.meta.url), 'utf8')
 
-test('browser UI keeps source stamping local and pending semantics explicit', () => {
-  assert.match(index, /Create a ProofStamp/)
+test('browser UI keeps direct file timestamping local and pending semantics explicit', () => {
+  assert.match(index, /Timestamp or verify a file/)
   assert.match(index, /id="file"[^>]*type="file"/)
-  assert.doesNotMatch(index, /mailto:/i)
-  assert.match(index, /Not submitted yet/)
+  assert.doesNotMatch(index, /id="description"/)
+  assert.doesNotMatch(index, /include-metadata/)
+  assert.doesNotMatch(index, /Canonical Manifest v1/)
   assert.match(index, /Waiting for Bitcoin is not Bitcoin confirmation/)
   assert.match(index, /check it again in about 3 hours/i)
-  assert.match(index, /receipt already contains the timestamp proof/i)
   assert.match(index, /send them the original file and its ProofStamp receipt/i)
-  assert.match(app, /timestampBadge\.textContent = 'Waiting for Bitcoin'/)
+  assert.match(app, /createPendingFileTimestamp\(preparedSnapshot\.agreement\.sha256\)/)
+  assert.match(app, /createPendingReceiptV2\(preparedSnapshot\.agreement, stamp\)/)
+  assert.match(app, /Submitting a blinded file fingerprint/)
 })
 
 test('create and verify are presented as separate compact modes', () => {
@@ -31,7 +33,7 @@ test('create and verify are presented as separate compact modes', () => {
   assert.match(styles, /create-panel:has\(#timestamp-result:not\(\[hidden\]\)\) #result/)
 })
 
-test('primary saved ProofStamp flow is framed as two simple inputs before network checks', () => {
+test('primary saved ProofStamp flow is two inputs before network checks', () => {
   assert.match(index, /Check a file and its receipt/)
   assert.match(index, /1\. File/)
   assert.match(index, /2\. ProofStamp receipt/)
@@ -41,12 +43,11 @@ test('primary saved ProofStamp flow is framed as two simple inputs before networ
   assert.match(index, /Files stay on this device\. They are not uploaded to ProofStamp/)
   assert.match(app, /runSavedProofCheck\(\{ verifyFile: true \}\)/)
   assert.match(app, /dualSha256File\(candidateFile\)/)
-  assert.match(app, /agreement\.sha256 !== validated\.receipt\.localHashAgreement\.fileSha256/)
-  assert.match(app, /This file does not match this ProofStamp/)
+  assert.match(app, /agreement\.sha256 !== receiptFileSha256\(validated\.receipt\)/)
   assert.match(app, /No calendar or Bitcoin request was made/)
 })
 
-test('receipt-only Bitcoin status check remains available as a secondary path', () => {
+test('receipt-only timestamp status remains a secondary path', () => {
   assert.match(index, /id="check-receipt-only"/)
   assert.match(index, /Only have the receipt\? Check timestamp status/)
   assert.match(app, /runSavedProofCheck\(\{ verifyFile: false \}\)/)
@@ -58,44 +59,30 @@ test('verification result separates file matching from Bitcoin timestamp status'
   assert.match(index, /Bitcoin timestamp still pending/)
   assert.match(index, /Keep this receipt and check again in about 3 hours/)
   assert.match(index, /id="save-checked-receipt"[^>]*>Save receipt</)
-  assert.match(index, /id="verify-another"/)
+  assert.match(index, /id="verify-another"[^>]*>Verify another ProofStamp</)
   assert.match(styles, /saved-result-active #verify-panel/)
   assert.match(verifyUx, /verificationResult\.dataset\.source = source/)
-  assert.match(verifyUx, /verifyAnother\.hidden = source === 'current'/)
-  assert.match(verifyUx, /Verify another ProofStamp/)
   assert.match(verifyUx, /The selected file is different from the file recorded in this ProofStamp/)
 })
 
-test('normal UI keeps protocol internals behind progressive disclosure', () => {
-  assert.match(index, /<details class="advanced-details">/)
-  assert.match(index, /<summary>Advanced options<\/summary>/)
-  assert.match(index, /<summary>Technical details<\/summary>/)
-  assert.match(index, /Manifest commitment/)
-  assert.match(index, /Save separate \.ots proof/)
+test('new .ots proof is presented as directly verifiable with the original file', () => {
+  assert.match(index, /stamped directly against the original file SHA-256/i)
+  assert.match(index, /Save \.ots proof/)
+  assert.match(index, /Open OpenTimestamps\.org verifier/)
+  assert.match(index, /original file together with the downloaded \.ots proof/i)
+  assert.match(app, /\.ots`, pending\.stamp\.proofBytes/)
 })
 
-test('official OpenTimestamps verifier handoff preloads the proof digest instead of the source file hash', () => {
-  assert.match(index, /id="verify-opentimestamps-current"/)
-  assert.match(index, /id="verify-opentimestamps-checked"/)
-  assert.match(index, /Verify this proof on OpenTimestamps\.org/)
-  assert.match(index, /official verifier with this proof and its Manifest commitment prefilled/i)
-  assert.match(index, /Your source file is not sent/)
-  assert.match(app, /new URL\('https:\/\/opentimestamps\.org\/'\)/)
-  assert.match(app, /searchParams\.set\('algorithm', 'SHA256'\)/)
-  assert.match(app, /searchParams\.set\('digest', manifestCommitmentSha256\)/)
-  assert.match(app, /searchParams\.set\('ots', proofBytesHex\(proofBytes\)\)/)
+test('legacy Manifest-v1 receipts remain supported without being the new proof target', () => {
+  assert.match(app, /receipt\.version === 1/)
+  assert.match(app, /Legacy Manifest commitment/)
+  assert.match(index, /Older Manifest-v1 ProofStamp receipts remain supported/)
 })
 
 test('verification result states the product claim boundary', () => {
   assert.match(index, /confirms exact file bytes and timestamp evidence/i)
   assert.match(index, /does not prove authorship/i)
   assert.match(index, /whether the contents are true/i)
-})
-
-test('browser UI exposes the independent verification path without adding a runtime dependency', () => {
-  assert.match(index, /opentimestamps\.org\/#stamp-and-verify/)
-  assert.match(index, /github\.com\/Proof-Stamp\/ots\/blob\/main\/docs\/independent-verification\.md/)
-  assert.match(index, /standard OpenTimestamps tooling and your own Bitcoin Core node/)
 })
 
 test('browser coordinators contain no direct outbound request primitive', () => {
