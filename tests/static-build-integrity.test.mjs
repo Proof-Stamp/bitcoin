@@ -12,6 +12,8 @@ const copiedSourceFiles = [
   'local-draft-v1.js',
   'pending-receipt-v1.js',
   'receipt-verify-v1.js',
+  'receipt-v2.js',
+  'receipt-verify.js',
   'network-policy.js',
 ]
 const rewrittenSourceFiles = ['ots-stamp.js', 'ots-upgrade-verify.js']
