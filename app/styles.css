@@ -63,13 +63,14 @@ a { color: inherit; }
 .brand-mark {
   width: 2.5rem;
   height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--navy);
-  border-radius: 50%;
-  font-size: .72rem;
-  font-weight: 850;
-  letter-spacing: -.03em;
+  display: block;
+  flex: 0 0 2.5rem;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: url('./proofstamp-logo.svg') center / contain no-repeat;
+  color: transparent;
+  font-size: 0;
 }
 .brand-copy { display: grid; line-height: 1.1; }
 .brand-copy strong { letter-spacing: -.02em; }
