@@ -89,19 +89,25 @@
         <button id="check-current-proof" type="button" class="secondary">Check Bitcoin status</button>
       </div>
       <p id="timestamp-note" class="privacy-note"></p>
-      <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Keep the receipt and .ots proof. They can be checked again later.</p>
+      <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Save your receipt, then you can close this page. Check the receipt again in about 3 hours. The receipt already contains the timestamp proof; saving the separate .ots file is optional and useful for independent verification.</p>
     </section>
 
     <section class="card verify-card" aria-labelledby="saved-heading">
       <p class="eyebrow">Already have a receipt?</p>
-      <h2 id="saved-heading">Check a saved ProofStamp</h2>
-      <p class="section-copy">Open a saved ProofStamp receipt. The browser checks its internal bindings locally first, then asks only approved calendars for updates and checks any Bitcoin attestation.</p>
+      <h2 id="saved-heading">Verify a file or check a saved ProofStamp</h2>
+      <p class="section-copy">Choose the saved receipt. To verify the original file, choose that file too. The browser checks both locally before asking approved calendars for timestamp updates or checking any Bitcoin attestation.</p>
       <label class="field">
         <span>ProofStamp receipt</span>
         <input id="saved-receipt" type="file" accept="application/json,.json">
         <small>The receipt is read locally. It is not uploaded to ProofStamp.</small>
       </label>
-      <button id="check-saved-proof" type="button">Check receipt</button>
+      <label class="field">
+        <span>File to verify <em>optional</em></span>
+        <input id="saved-original-file" type="file">
+        <small>Choose the original file, or any file you want to compare with this ProofStamp. It stays on this device.</small>
+      </label>
+      <button id="check-saved-proof" type="button">Check ProofStamp</button>
+      <p class="privacy-note">Add the file when you want to confirm that its exact bytes match the fingerprint recorded in the receipt.</p>
       <p id="saved-status" class="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -114,6 +120,7 @@
         <span id="verification-badge" class="badge">Waiting for Bitcoin</span>
       </div>
       <dl class="details">
+        <div id="verified-file-row" hidden><dt>File SHA-256</dt><dd><code id="verified-file-sha"></code></dd></div>
         <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
         <div id="verified-height-row" hidden><dt>Bitcoin block height</dt><dd id="verified-height"></dd></div>
         <div id="verified-hash-row" hidden><dt>Bitcoin block hash</dt><dd><code id="verified-block-hash"></code></dd></div>
@@ -132,7 +139,7 @@
       <p class="eyebrow">Independent verification</p>
       <h2 id="independent-heading">The proof does not depend on ProofStamp staying online</h2>
       <p class="section-copy">Save the standard .ots proof and the ProofStamp receipt. A completed proof can be checked with standard OpenTimestamps tooling and your own Bitcoin Core node.</p>
-      <p class="privacy-note"><a href="https://github.com/Proof-Stamp/bitcoin/blob/main/docs/independent-verification.md">Read the independent verification instructions</a>.</p>
+      <p class="privacy-note"><a href="https://github.com/Proof-Stamp/ots/blob/main/docs/independent-verification.md">Read the independent verification instructions</a>.</p>
     </section>
   </main>
   <script type="module" src="./app.js"></script>
