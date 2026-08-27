@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://proofstamp.org/schemas/proofstamp-receipt-v2.schema.json",
+  "title": "ProofStamp receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "status",
+    "target",
+    "proofTarget",
+    "fileSha256",
+    "localHashAgreement",
+    "openTimestamps"
+  ],
+  "properties": {
+    "format": { "const": "proofstamp-receipt" },
+    "version": { "const": 2 },
+    "status": { "enum": ["pending", "bitcoin-attestation-verified"] },
+    "target": { "const": "bitcoin" },
+    "proofTarget": { "const": "file-sha256" },
+    "fileSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "localHashAgreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "fileSha256", "webCryptoSha256", "rustSha256"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "fileSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "webCryptoSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "rustSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "openTimestamps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proofBase64", "proofSha256", "calendarsAttempted", "calendarsAccepted", "calendarsFailed", "redundancy"],
+      "properties": {
+        "proofBase64": { "type": "string", "minLength": 1 },
+        "proofSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "calendarsAttempted": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "format": "uri" } },
+        "calendarsAccepted": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "format": "uri" } },
+        "calendarsFailed": { "type": "array", "maxItems": 16, "uniqueItems": true, "items": { "type": "string", "format": "uri" } },
+        "redundancy": { "enum": ["normal", "reduced"] }
+      }
+    },
+    "bitcoinVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "consensusValidation", "blockHeight", "blockHash", "blockTime"],
+      "properties": {
+        "method": { "const": "blockstream-esplora-raw-header" },
+        "consensusValidation": { "const": false },
+        "blockHeight": { "type": "integer", "minimum": 0 },
+        "blockHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "blockTime": { "type": "integer", "minimum": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "bitcoin-attestation-verified" } } },
+      "then": { "required": ["bitcoinVerification"] },
+      "else": { "not": { "required": ["bitcoinVerification"] } }
+    }
+  ]
+}
