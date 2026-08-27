@@ -5,6 +5,7 @@ import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
 const index = await readFile(new URL('../app/index.html', import.meta.url), 'utf8')
 const app = await readFile(new URL('../app/app.js', import.meta.url), 'utf8')
+const styles = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8')
 const headers = await readFile(new URL('../app/_headers', import.meta.url), 'utf8')
 
 test('browser UI keeps source stamping local and pending semantics explicit', () => {
@@ -13,15 +14,24 @@ test('browser UI keeps source stamping local and pending semantics explicit', ()
   assert.doesNotMatch(index, /mailto:/i)
   assert.match(index, /Not submitted yet/)
   assert.match(index, /Waiting for Bitcoin is not Bitcoin confirmation/)
-  assert.match(index, /Check the receipt again in about 3 hours/)
-  assert.match(index, /receipt already contains the timestamp proof/)
-  assert.match(index, /send them the original file and its ProofStamp receipt/)
+  assert.match(index, /check it again in about 3 hours/i)
+  assert.match(index, /receipt already contains the timestamp proof/i)
+  assert.match(index, /send them the original file and its ProofStamp receipt/i)
   assert.match(app, /timestampBadge\.textContent = 'Waiting for Bitcoin'/)
+})
+
+test('create and verify are presented as separate compact modes', () => {
+  assert.match(index, /id="mode-create"[^>]*type="radio"/)
+  assert.match(index, /id="mode-verify"[^>]*type="radio"/)
+  assert.match(index, /class="tabs"/)
+  assert.match(styles, /#mode-create:checked ~ #verify-panel/)
+  assert.match(styles, /#mode-verify:checked ~ #create-panel/)
+  assert.match(styles, /create-panel:has\(#result:not\(\[hidden\]\)\) #prepare-stage/)
+  assert.match(styles, /create-panel:has\(#timestamp-result:not\(\[hidden\]\)\) #result/)
 })
 
 test('primary saved ProofStamp flow verifies file bytes locally before network status checks', () => {
   assert.match(index, /Verify a file with its ProofStamp receipt/)
-  assert.match(index, /You need two files/)
   assert.match(index, /id="saved-original-file"[^>]*type="file"/)
   assert.match(index, /id="saved-receipt"[^>]*type="file"/)
   assert.match(index, /Verify file \+ ProofStamp/)
@@ -38,6 +48,14 @@ test('receipt-only Bitcoin status check remains available as a secondary path', 
   assert.match(index, /id="check-receipt-only"/)
   assert.match(index, /Check receipt status only/)
   assert.match(app, /runSavedProofCheck\(\{ verifyFile: false \}\)/)
+})
+
+test('normal UI keeps protocol internals behind progressive disclosure', () => {
+  assert.match(index, /<details class="advanced-details">/)
+  assert.match(index, /<summary>Advanced options<\/summary>/)
+  assert.match(index, /<summary>Technical details<\/summary>/)
+  assert.match(index, /Manifest commitment/)
+  assert.match(index, /Save separate \.ots proof/)
 })
 
 test('verification result states the product claim boundary', () => {
