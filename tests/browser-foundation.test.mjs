@@ -58,9 +58,11 @@ test('verification result separates file matching from Bitcoin timestamp status'
   assert.match(index, /Bitcoin timestamp still pending/)
   assert.match(index, /Keep this receipt and check again in about 3 hours/)
   assert.match(index, /id="save-checked-receipt"[^>]*>Save receipt</)
-  assert.match(index, /id="verify-another"[^>]*>Verify another file</)
+  assert.match(index, /id="verify-another"/)
   assert.match(styles, /saved-result-active #verify-panel/)
   assert.match(verifyUx, /verificationResult\.dataset\.source = source/)
+  assert.match(verifyUx, /verifyAnother\.hidden = source === 'current'/)
+  assert.match(verifyUx, /Verify another ProofStamp/)
   assert.match(verifyUx, /The selected file is different from the file recorded in this ProofStamp/)
 })
 
