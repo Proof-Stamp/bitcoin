@@ -148,64 +148,96 @@
       <section id="verify-panel" class="panel verify-panel" aria-labelledby="saved-heading">
         <div class="verify-intro">
           <p class="stage-kicker">Verify a ProofStamp</p>
-          <h2 id="saved-heading">Verify a file with its ProofStamp receipt</h2>
-          <p>Choose the file you received and its <code>.proofstamp-receipt.json</code>. Both are read locally first.</p>
+          <h2 id="saved-heading">Check a file and its receipt</h2>
+          <p>Choose the two files you received. ProofStamp first checks that they match, then checks the Bitcoin timestamp.</p>
         </div>
 
-        <label class="field">
-          <span>File to verify</span>
+        <label class="field verify-file-field">
+          <span>1. File</span>
           <input id="saved-original-file" type="file">
-          <small>Choose the original file, or the copy you received.</small>
+          <small>The document, image, or other file you want to verify.</small>
         </label>
-        <label class="field">
-          <span>ProofStamp receipt</span>
+        <label class="field verify-file-field">
+          <span>2. ProofStamp receipt</span>
           <input id="saved-receipt" type="file" accept="application/json,.json">
-          <small>Choose the matching <code>.proofstamp-receipt.json</code>.</small>
+          <small>Usually ends in <code>.proofstamp-receipt.json</code>.</small>
         </label>
 
-        <button id="check-saved-proof" class="primary full-button" type="button">Verify file + ProofStamp</button>
-        <button id="check-receipt-only" type="button" class="text-button">Don't have the file? Check receipt status only</button>
+        <button id="check-saved-proof" class="primary full-button" type="button">Verify ProofStamp</button>
+        <button id="check-receipt-only" type="button" class="text-button">Only have the receipt? Check timestamp status</button>
 
-        <p class="privacy-note">Neither file is uploaded to ProofStamp. If the file fingerprint does not match, verification stops locally before any calendar or Bitcoin request is made.</p>
+        <p class="privacy-note verify-privacy">Files stay on this device. They are not uploaded to ProofStamp.</p>
         <p id="saved-status" class="status" role="status" aria-live="polite"></p>
       </section>
 
       <section id="verification-result" class="result-stage" hidden aria-labelledby="verification-heading">
-        <div class="stage-heading">
+        <div class="stage-heading result-heading">
           <div>
-            <p id="verification-kicker" class="ok">Proof checked</p>
+            <p id="verification-kicker" class="ok">Verification result</p>
             <h2 id="verification-heading">Receipt status</h2>
           </div>
           <span id="verification-badge" class="badge">Waiting for Bitcoin</span>
         </div>
 
-        <p id="verification-note" class="result-note"></p>
+        <div class="verification-checks" aria-label="Verification checks">
+          <div class="verification-check file-match-state">
+            <span class="verification-check-icon verified" aria-hidden="true">✓</span>
+            <div>
+              <strong>File matches the receipt</strong>
+              <small>The exact file fingerprint matches the one recorded in this ProofStamp.</small>
+            </div>
+          </div>
+          <div class="verification-check file-unchecked-state">
+            <span class="verification-check-icon neutral" aria-hidden="true">–</span>
+            <div>
+              <strong>File not checked</strong>
+              <small>You checked the receipt only. Add the original file to verify the file itself.</small>
+            </div>
+          </div>
+          <div class="verification-check bitcoin-verified-state">
+            <span class="verification-check-icon verified" aria-hidden="true">✓</span>
+            <div>
+              <strong>Bitcoin timestamp verified</strong>
+              <small>The OpenTimestamps proof has a Bitcoin attestation verified by the browser check.</small>
+            </div>
+          </div>
+          <div class="verification-check bitcoin-pending-state">
+            <span class="verification-check-icon pending" aria-hidden="true">○</span>
+            <div>
+              <strong>Bitcoin timestamp still pending</strong>
+              <small>The file or receipt is valid so far. The Bitcoin attestation is not available yet.</small>
+            </div>
+          </div>
+        </div>
+
+        <p class="result-guidance bitcoin-pending-guidance">Keep this receipt and check again in about 3 hours. You can close this page.</p>
+        <p class="result-guidance bitcoin-verified-guidance">The timestamp evidence is complete for this browser verification path.</p>
+        <p id="verification-warning" class="verification-warning" hidden></p>
 
         <dl class="details evidence-details">
-          <div id="verified-file-row" hidden><dt>File SHA-256</dt><dd><code id="verified-file-sha"></code></dd></div>
-          <div id="verified-height-row" hidden><dt>Bitcoin block height</dt><dd id="verified-height"></dd></div>
-          <div id="verified-time-row" hidden><dt>Bitcoin block time</dt><dd id="verified-block-time"></dd></div>
+          <div id="verified-height-row" hidden><dt>Bitcoin block</dt><dd id="verified-height"></dd></div>
+          <div id="verified-time-row" hidden><dt>Block time</dt><dd id="verified-block-time"></dd></div>
         </dl>
 
-        <button id="save-checked-receipt" class="primary full-button" type="button">Save updated receipt</button>
+        <button id="save-checked-receipt" class="primary full-button" type="button">Save receipt</button>
+        <button id="verify-another" class="secondary full-button" type="button">Verify another file</button>
 
-        <details class="advanced-details">
+        <details class="advanced-details result-technical-details">
           <summary>Technical details</summary>
           <dl class="details compact-details">
+            <div id="verified-file-row" hidden><dt>File SHA-256</dt><dd><code id="verified-file-sha"></code></dd></div>
             <div id="verified-hash-row" hidden><dt>Bitcoin block hash</dt><dd><code id="verified-block-hash"></code></dd></div>
             <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
             <div><dt>Verification method</dt><dd id="verification-method">OpenTimestamps + Blockstream raw block header</dd></div>
           </dl>
+          <p id="verification-note" class="technical-note"></p>
           <button id="save-checked-proof" type="button" class="secondary">Save updated .ots proof</button>
           <a id="verify-opentimestamps-checked" class="text-link" href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer" hidden>Verify this proof on OpenTimestamps.org ↗</a>
           <p class="privacy-note">The OpenTimestamps link opens the official verifier with this proof and its Manifest commitment prefilled. Your source file is not sent.</p>
           <p class="warning-note"><strong>Browser verification is a convenience check.</strong> It verifies the OpenTimestamps Bitcoin attestation against a raw block header fetched through Blockstream. It is not equivalent to independently validating Bitcoin consensus with your own Bitcoin Core node.</p>
         </details>
 
-        <div class="limitation compact-limitation">
-          <strong>What this verifies</strong>
-          <p>ProofStamp can verify that these exact file bytes match the timestamped record. It does not prove who created the file, whether its contents are true, or when the file was originally created.</p>
-        </div>
+        <p class="claim-note">ProofStamp confirms exact file bytes and timestamp evidence. It does not prove authorship or whether the contents are true.</p>
       </section>
     </section>
 
@@ -255,5 +287,6 @@
   </footer>
 
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./verify-ux.js"></script>
 </body>
 </html>
