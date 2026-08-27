@@ -20,6 +20,7 @@ const status = document.querySelector('#status')
 const result = document.querySelector('#result')
 const fileSha = document.querySelector('#file-sha')
 const submitTimestampButton = document.querySelector('#submit-timestamp')
+const timestampActionStatus = document.querySelector('#timestamp-action-status')
 const timestampResult = document.querySelector('#timestamp-result')
 const timestampBadge = document.querySelector('#timestamp-badge')
 const calendarCount = document.querySelector('#calendar-count')
@@ -64,6 +65,11 @@ let activeVerificationRun = null
 function setStatus(message, isError = false) {
   status.textContent = message
   status.classList.toggle('error', isError)
+}
+
+function setTimestampActionStatus(message, isError = false) {
+  timestampActionStatus.textContent = message
+  timestampActionStatus.classList.toggle('error', isError)
 }
 
 function setSavedStatus(message, isError = false) {
@@ -146,9 +152,12 @@ function invalidatePrepared() {
   result.hidden = true
   timestampResult.hidden = true
   verifyOpenTimestampsCurrentLink.hidden = true
+  setTimestampActionStatus('')
+  submitTimestampButton.textContent = 'Timestamp file'
+  submitTimestampButton.removeAttribute('aria-busy')
   if (activeVerificationRun?.source === 'current') activeVerificationRun = null
   clearChecked()
-  setStatus('The file changed. Check it locally again before timestamping it.')
+  setStatus('The file changed. Check it again before timestamping it.')
 }
 
 function resetVerificationRows() {
@@ -254,6 +263,9 @@ form.addEventListener('submit', async (event) => {
   pending = null
   activeVerificationRun = null
   setStatus('')
+  setTimestampActionStatus('')
+  submitTimestampButton.textContent = 'Timestamp file'
+  submitTimestampButton.removeAttribute('aria-busy')
 
   const [file] = fileInput.files
   if (!file) {
@@ -269,7 +281,7 @@ form.addEventListener('submit', async (event) => {
   prepareButton.disabled = true
   fileInput.disabled = true
   try {
-    setStatus('Reading the file locally and running two independent SHA-256 checks…')
+    setStatus('Checking the file…')
     const agreement = await dualSha256File(file)
     if (epoch !== sourceEpoch) return
 
@@ -277,7 +289,6 @@ form.addEventListener('submit', async (event) => {
     fileSha.textContent = agreement.sha256
     result.hidden = false
     submitTimestampButton.disabled = false
-    setStatus('Both local SHA-256 methods agree. Nothing has been submitted yet.')
   } catch (error) {
     if (epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Local file check failed.', true)
   } finally {
@@ -291,8 +302,10 @@ submitTimestampButton.addEventListener('click', async () => {
   const epoch = sourceEpoch
   const preparedSnapshot = prepared
   submitTimestampButton.disabled = true
+  submitTimestampButton.textContent = 'Creating timestamp…'
+  submitTimestampButton.setAttribute('aria-busy', 'true')
+  setTimestampActionStatus('Creating your OpenTimestamps proof. This can take a few seconds.')
   try {
-    setStatus('Submitting a blinded file fingerprint to the approved OpenTimestamps calendars…')
     const stamp = await createPendingFileTimestamp(preparedSnapshot.agreement.sha256)
     const receipt = await createPendingReceiptV2(preparedSnapshot.agreement, stamp)
     if (epoch !== sourceEpoch || prepared !== preparedSnapshot) return
@@ -305,12 +318,18 @@ submitTimestampButton.addEventListener('click', async () => {
       ? 'Timestamp accepted by one calendar. Save the receipt and check again in about 3 hours.'
       : 'Save the receipt. You can close this page and check it again in about 3 hours.'
     setOfficialOpenTimestampsVerifierLink(verifyOpenTimestampsCurrentLink, stamp.proofBytes, receipt)
+    setTimestampActionStatus('')
     timestampResult.hidden = false
-    setStatus('Timestamp request accepted. The .ots proof is bound directly to this file SHA-256.')
   } catch (error) {
-    if (epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Timestamp submission failed.', true)
+    if (epoch === sourceEpoch) {
+      setTimestampActionStatus(error instanceof Error ? error.message : 'Could not create the timestamp proof.', true)
+    }
   } finally {
-    if (epoch === sourceEpoch && prepared === preparedSnapshot && !pending) submitTimestampButton.disabled = false
+    submitTimestampButton.removeAttribute('aria-busy')
+    if (epoch === sourceEpoch && prepared === preparedSnapshot && !pending) {
+      submitTimestampButton.disabled = false
+      submitTimestampButton.textContent = 'Timestamp file'
+    }
   }
 })
 
@@ -321,8 +340,10 @@ checkCurrentProofButton.addEventListener('click', async () => {
   const pendingSnapshot = pending
   const run = beginVerificationRun('current')
   checkCurrentProofButton.disabled = true
+  checkCurrentProofButton.textContent = 'Checking…'
+  checkCurrentProofButton.setAttribute('aria-busy', 'true')
+  timestampNote.textContent = 'Checking Bitcoin status…'
   try {
-    setStatus('Checking the timestamp status…')
     const checkedCurrent = await checkReceiptProof(
       pendingSnapshot.receipt,
       pendingSnapshot.stamp.proofBytes,
@@ -339,17 +360,19 @@ checkCurrentProofButton.addEventListener('click', async () => {
       const block = checkedCurrent.verification.earliest
       timestampBadge.textContent = 'Bitcoin timestamp verified'
       timestampNote.textContent = `Verified in Bitcoin block ${block.height}, ${new Date(block.blockTime * 1000).toISOString()}. Save the updated receipt.`
-      setStatus('Bitcoin timestamp verified. The receipt now contains the verified block evidence.')
     } else {
       timestampBadge.textContent = 'Waiting for Bitcoin'
       timestampNote.textContent = 'Still waiting for Bitcoin. Keep the receipt and check again later. You can close this page.'
-      setStatus('Still waiting for Bitcoin. Nothing is wrong.')
     }
   } catch (error) {
-    if (verificationRunIsCurrent(run) && epoch === sourceEpoch) setStatus(error instanceof Error ? error.message : 'Timestamp status check failed.', true)
+    if (verificationRunIsCurrent(run) && epoch === sourceEpoch) {
+      timestampNote.textContent = error instanceof Error ? error.message : 'Could not check Bitcoin status. Try again later.'
+    }
   } finally {
     if (verificationRunIsCurrent(run)) activeVerificationRun = null
     checkCurrentProofButton.disabled = false
+    checkCurrentProofButton.textContent = 'Check Bitcoin status'
+    checkCurrentProofButton.removeAttribute('aria-busy')
   }
 })
 
