@@ -63,6 +63,7 @@ test('official OpenTimestamps verifier handoff preloads the proof digest instead
   assert.match(index, /id="verify-opentimestamps-checked"/)
   assert.match(index, /Verify this proof on OpenTimestamps\.org/)
   assert.match(index, /official verifier with this proof and its Manifest commitment prefilled/i)
+  assert.match(index, /Your source file is not sent/)
   assert.match(app, /new URL\('https:\/\/opentimestamps\.org\/'\)/)
   assert.match(app, /searchParams\.set\('algorithm', 'SHA256'\)/)
   assert.match(app, /searchParams\.set\('digest', manifestCommitmentSha256\)/)
