@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#071b2c">
   <title>ProofStamp via Bitcoin</title>
-  <meta name="description" content="Create or verify a portable Bitcoin-backed ProofStamp without uploading your file.">
+  <meta name="description" content="Timestamp or verify a file with OpenTimestamps and Bitcoin without uploading it.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -23,12 +23,12 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">Create or verify a ProofStamp.</h1>
-      <p>No upload. No account. Your device does the math.</p>
+      <h1 id="hero-title">Timestamp or verify a file.</h1>
+      <p>No upload. No account. Your browser hashes the file locally.</p>
       <ul class="trust-list" aria-label="ProofStamp properties">
         <li><span>✓</span>Files stay local</li>
-        <li><span>✓</span>Portable receipt</li>
-        <li><span>✓</span>OpenTimestamps + Bitcoin</li>
+        <li><span>✓</span>Standard OpenTimestamps proof</li>
+        <li><span>✓</span>Bitcoin anchored</li>
       </ul>
     </section>
 
@@ -45,7 +45,7 @@
         <section id="prepare-stage" class="stage">
           <p class="stage-kicker">Create a ProofStamp</p>
           <h2 id="prepare-heading">Choose a file</h2>
-          <p class="stage-subcopy">ProofStamp fingerprints the file locally with two independent SHA-256 implementations. The file itself never leaves this device.</p>
+          <p class="stage-subcopy">ProofStamp calculates the file's SHA-256 fingerprint locally with two independent methods. The file never leaves this device.</p>
 
           <form id="prepare-form">
             <label class="field">
@@ -53,18 +53,6 @@
               <input id="file" name="file" type="file" required>
               <small>One file, up to 50 MiB.</small>
             </label>
-
-            <label class="field">
-              <span>Description <em>optional</em></span>
-              <textarea id="description" name="description" rows="3" maxlength="4096" placeholder="What is this record?"></textarea>
-            </label>
-
-            <label class="check">
-              <input id="include-metadata" type="checkbox">
-              <span>Include the file name and browser-provided media type in the manifest</span>
-            </label>
-            <p class="privacy-note">Off by default to reduce metadata in the portable ProofStamp.</p>
-
             <button id="prepare-button" class="primary full-button" type="submit">Check file locally</button>
           </form>
           <p id="status" class="status" role="status" aria-live="polite"></p>
@@ -74,7 +62,7 @@
           <div class="stage-heading">
             <div>
               <p class="ok">✓ File checked locally</p>
-              <h2 id="result-heading">Create the timestamp proof</h2>
+              <h2 id="result-heading">Timestamp this file</h2>
             </div>
             <span class="badge">Not submitted yet</span>
           </div>
@@ -88,23 +76,7 @@
           </div>
 
           <button id="submit-timestamp" class="primary full-button" type="button">Create timestamp proof</button>
-          <p class="privacy-note">Only a blinded commitment is sent to three approved OpenTimestamps calendars.</p>
-
-          <details class="advanced-details">
-            <summary>Advanced options</summary>
-            <dl class="details compact-details">
-              <div><dt>Manifest commitment</dt><dd><code id="manifest-commitment"></code></dd></div>
-              <div><dt>Independent checks</dt><dd>Web Crypto SHA-256 + RustCrypto SHA-256</dd></div>
-            </dl>
-            <details class="nested-details">
-              <summary>Canonical Manifest v1</summary>
-              <pre id="manifest-text"></pre>
-            </details>
-            <div class="actions">
-              <button id="download-manifest" type="button" class="secondary">Save manifest</button>
-              <button id="download-draft" type="button" class="secondary">Save local draft</button>
-            </div>
-          </details>
+          <p class="privacy-note">Only a blinded form of the file fingerprint is sent to the approved OpenTimestamps calendars.</p>
           <a class="text-link" href="./">Start over</a>
         </section>
 
@@ -128,18 +100,19 @@
 
           <button id="check-current-proof" type="button" class="secondary full-button">Check Bitcoin status</button>
           <p id="timestamp-note" class="privacy-note"></p>
-          <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> The receipt already contains the timestamp proof. Keep it and check again later.</p>
+          <p class="warning-note"><strong>Waiting for Bitcoin is not Bitcoin confirmation.</strong> Keep the receipt and check again later.</p>
 
           <details class="advanced-details">
-            <summary>Advanced options</summary>
+            <summary>Independent OpenTimestamps proof</summary>
+            <p class="privacy-note">This .ots proof is stamped directly against the original file SHA-256. Download it and pair it with the original file in standard OpenTimestamps tools.</p>
+            <div class="actions">
+              <button id="download-proof" type="button" class="secondary">Save .ots proof</button>
+              <a id="verify-opentimestamps-current" class="text-link" href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer" hidden>Open OpenTimestamps.org verifier ↗</a>
+            </div>
             <dl class="details compact-details">
               <div><dt>Calendars accepted</dt><dd id="calendar-count"></dd></div>
               <div><dt>Proof SHA-256</dt><dd><code id="proof-sha"></code></dd></div>
-              <div><dt>Target</dt><dd>Bitcoin via OpenTimestamps</dd></div>
             </dl>
-            <button id="download-proof" type="button" class="secondary">Save separate .ots proof</button>
-            <a id="verify-opentimestamps-current" class="text-link" href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer" hidden>Verify this proof on OpenTimestamps.org ↗</a>
-            <p class="privacy-note">The separate .ots file is optional for normal ProofStamp use. The OpenTimestamps link opens the official verifier with this proof and its Manifest commitment prefilled. Your source file is not sent.</p>
           </details>
           <a class="text-link" href="./">Create another</a>
         </section>
@@ -149,7 +122,7 @@
         <div class="verify-intro">
           <p class="stage-kicker">Verify a ProofStamp</p>
           <h2 id="saved-heading">Check a file and its receipt</h2>
-          <p>Choose the two files you received. ProofStamp first checks that they match, then checks the Bitcoin timestamp.</p>
+          <p>Choose the two files you received. ProofStamp checks the file locally, then checks the timestamp.</p>
         </div>
 
         <label class="field verify-file-field">
@@ -174,7 +147,7 @@
         <div class="stage-heading result-heading">
           <div>
             <p id="verification-kicker" class="ok">Verification result</p>
-            <h2 id="verification-heading">Receipt status</h2>
+            <h2 id="verification-heading">Timestamp status</h2>
           </div>
           <span id="verification-badge" class="badge">Waiting for Bitcoin</span>
         </div>
@@ -184,7 +157,7 @@
             <span class="verification-check-icon verified" aria-hidden="true">✓</span>
             <div>
               <strong>File matches the receipt</strong>
-              <small>The exact file fingerprint matches the one recorded in this ProofStamp.</small>
+              <small>The exact file SHA-256 matches the one recorded in this ProofStamp.</small>
             </div>
           </div>
           <div class="verification-check file-unchecked-state">
@@ -205,7 +178,7 @@
             <span class="verification-check-icon pending" aria-hidden="true">○</span>
             <div>
               <strong>Bitcoin timestamp still pending</strong>
-              <small>The file or receipt is valid so far. The Bitcoin attestation is not available yet.</small>
+              <small>The ProofStamp is valid so far. The Bitcoin attestation is not available yet.</small>
             </div>
           </div>
         </div>
@@ -226,14 +199,14 @@
           <summary>Technical details</summary>
           <dl class="details compact-details">
             <div id="verified-file-row" hidden><dt>File SHA-256</dt><dd><code id="verified-file-sha"></code></dd></div>
+            <div><dt id="verified-digest-label">Timestamped file SHA-256</dt><dd><code id="verified-commitment"></code></dd></div>
             <div id="verified-hash-row" hidden><dt>Bitcoin block hash</dt><dd><code id="verified-block-hash"></code></dd></div>
-            <div><dt>Manifest commitment</dt><dd><code id="verified-commitment"></code></dd></div>
             <div><dt>Verification method</dt><dd id="verification-method">OpenTimestamps + Blockstream raw block header</dd></div>
           </dl>
           <p id="verification-note" class="technical-note"></p>
-          <button id="save-checked-proof" type="button" class="secondary">Save updated .ots proof</button>
-          <a id="verify-opentimestamps-checked" class="text-link" href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer" hidden>Verify this proof on OpenTimestamps.org ↗</a>
-          <p class="privacy-note">The OpenTimestamps link opens the official verifier with this proof and its Manifest commitment prefilled. Your source file is not sent.</p>
+          <button id="save-checked-proof" type="button" class="secondary">Save .ots proof</button>
+          <a id="verify-opentimestamps-checked" class="text-link" href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer" hidden>Open OpenTimestamps.org verifier ↗</a>
+          <p class="privacy-note">For new ProofStamps, use the original file together with the downloaded .ots proof on OpenTimestamps.org. Legacy Manifest-v1 receipts use the prefilled verifier link instead.</p>
           <p class="warning-note"><strong>Browser verification is a convenience check.</strong> It verifies the OpenTimestamps Bitcoin attestation against a raw block header fetched through Blockstream. It is not equivalent to independently validating Bitcoin consensus with your own Bitcoin Core node.</p>
         </details>
 
@@ -243,22 +216,22 @@
 
     <section class="explanation" aria-labelledby="how-heading">
       <p class="stage-kicker">How it works</p>
-      <h2 id="how-heading">Your file stays yours. The receipt carries the proof.</h2>
+      <h2 id="how-heading">File → SHA-256 → OpenTimestamps → Bitcoin.</h2>
       <div class="explanation-grid">
         <article>
           <span class="explanation-number">01</span>
-          <h3>Fingerprint locally</h3>
-          <p>Your browser creates the file's SHA-256 fingerprint. The file is not uploaded.</p>
+          <h3>Hash locally</h3>
+          <p>Your browser calculates the file's SHA-256 fingerprint. The file is not uploaded.</p>
         </article>
         <article>
           <span class="explanation-number">02</span>
-          <h3>Timestamp the commitment</h3>
-          <p>Only a blinded commitment is submitted through OpenTimestamps and later anchored to Bitcoin.</p>
+          <h3>Timestamp the fingerprint</h3>
+          <p>OpenTimestamps timestamps that exact SHA-256 and later anchors it to Bitcoin.</p>
         </article>
         <article>
           <span class="explanation-number">03</span>
-          <h3>Verify later</h3>
-          <p>Give someone the original file and receipt. They can verify the exact file bytes themselves.</p>
+          <h3>Verify anywhere</h3>
+          <p>Use ProofStamp with the file + receipt, or use the original file + .ots proof with OpenTimestamps.</p>
         </article>
       </div>
 
@@ -269,8 +242,8 @@
 
       <details class="independent-details">
         <summary>Independent verification</summary>
-        <p>A completed proof can also be checked with standard OpenTimestamps tooling and your own Bitcoin Core node. The proof does not depend on ProofStamp staying online.</p>
-        <p><strong>Using OpenTimestamps.org manually:</strong> a ProofStamp .ots file timestamps the Manifest commitment, not the original source-file hash. Pairing the .ots file with the original source file on OpenTimestamps.org will therefore show a mismatch. Use the prefilled “Verify this proof on OpenTimestamps.org” link shown with the proof, or use the independent verification instructions below.</p>
+        <p>New ProofStamps timestamp the file SHA-256 directly. Download the .ots proof and verify it with the original file using OpenTimestamps.org, the OpenTimestamps CLI, or your own Bitcoin Core node.</p>
+        <p>Older Manifest-v1 ProofStamp receipts remain supported by this app, but their .ots proof timestamps the legacy Manifest commitment rather than the raw file hash.</p>
         <a href="https://opentimestamps.org/#stamp-and-verify" target="_blank" rel="noopener noreferrer">Open the official OpenTimestamps verifier</a><br>
         <a href="https://github.com/Proof-Stamp/ots/blob/main/docs/independent-verification.md">Read the independent verification instructions</a>.
       </details>
