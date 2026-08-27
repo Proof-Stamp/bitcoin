@@ -5,6 +5,7 @@ import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
 const index = await readFile(new URL('../app/index.html', import.meta.url), 'utf8')
 const app = await readFile(new URL('../app/app.js', import.meta.url), 'utf8')
+const receiptVerify = await readFile(new URL('../src/receipt-verify.js', import.meta.url), 'utf8')
 const verifyUx = await readFile(new URL('../app/verify-ux.js', import.meta.url), 'utf8')
 const styles = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8')
 const headers = await readFile(new URL('../app/_headers', import.meta.url), 'utf8')
@@ -74,7 +75,8 @@ test('new .ots proof is presented as directly verifiable with the original file'
 })
 
 test('legacy Manifest-v1 receipts remain supported without being the new proof target', () => {
-  assert.match(app, /receipt\.version === 1/)
+  assert.match(receiptVerify, /if \(version === 1\)/)
+  assert.match(receiptVerify, /proofTarget: 'manifest-v1'/)
   assert.match(app, /Legacy Manifest commitment/)
   assert.match(index, /Older Manifest-v1 ProofStamp receipts remain supported/)
 })
