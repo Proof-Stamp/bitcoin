@@ -35,6 +35,9 @@ function syncVerificationResult() {
   verificationResult.dataset.source = source
   toolShell.classList.toggle('saved-result-active', source === 'saved')
 
+  verifyAnother.hidden = source === 'current'
+  verifyAnother.textContent = 'Verify another ProofStamp'
+
   if (source === 'saved') {
     if (!savedStatus.classList.contains('error')) savedStatus.textContent = ''
 
