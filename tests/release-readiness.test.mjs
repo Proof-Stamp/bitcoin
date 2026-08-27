@@ -9,6 +9,8 @@ const independent = await read('../docs/independent-verification.md')
 const deployment = await read('../docs/deployment-and-product-boundary.md')
 const release = await read('../docs/experimental-release.md')
 const rustBuild = await read('../scripts/build-rust-hasher.sh')
+const browserSmokeRunner = await read('../scripts/run-browser-smoke.sh')
+const browserSmoke = await read('../scripts/browser-smoke.mjs')
 
 test('README identifies the current roadmap phase and independent verification guide', () => {
   assert.match(readme, /Phase 6: static Cloudflare Pages deployment and experimental release/)
@@ -39,6 +41,15 @@ test('Cloudflare Rust bootstrap is narrow, pinned, and checksum-verified', () =>
   assert.match(rustBuild, /rust-toolchain\.toml/)
   assert.match(rustBuild, /sha256sum --check --status/)
   assert.match(rustBuild, /if ! command -v rustup/)
+})
+
+test('real-browser smoke lets Chrome choose an unused DevTools port', () => {
+  assert.match(browserSmokeRunner, /--remote-debugging-port=0/)
+  assert.match(browserSmokeRunner, /DevToolsActivePort/)
+  assert.match(browserSmokeRunner, /env -u DBUS_SESSION_BUS_ADDRESS/)
+  assert.doesNotMatch(browserSmokeRunner, /--remote-debugging-port=9222/)
+  assert.doesNotMatch(browserSmoke, /127\.0\.0\.1:9222/)
+  assert.match(browserSmoke, /devtoolsBaseUrl/)
 })
 
 test('experimental release checklist requires green protected checks and a production smoke test', () => {
