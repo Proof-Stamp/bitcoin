@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071b2c">
+  <meta name="theme-color" content="#162D52">
   <title>ProofStamp via Bitcoin</title>
-  <meta name="description" content="Timestamp or verify a file with OpenTimestamps and Bitcoin without uploading it.">
+  <meta name="description" content="ProofStamp a file with OpenTimestamps and Bitcoin without uploading it, then verify it later.">
+  <link rel="icon" href="./proofstamp-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./brand-tokens.css">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./brandkit.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -23,12 +26,12 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">Timestamp or verify a file.</h1>
-      <p>No upload. No account. Your browser hashes the file locally.</p>
+      <h1 id="hero-title">ProofStamp a file with Bitcoin.</h1>
+      <p>No upload. No account. Your browser does the math.</p>
       <ul class="trust-list" aria-label="ProofStamp properties">
-        <li><span>✓</span>Files stay local</li>
-        <li><span>✓</span>Standard OpenTimestamps proof</li>
-        <li><span>✓</span>Anchors to Bitcoin</li>
+        <li>Files stay local</li>
+        <li>Standard OpenTimestamps proof</li>
+        <li>Anchors to Bitcoin</li>
       </ul>
     </section>
 
@@ -82,7 +85,7 @@
         </section>
 
         <section id="timestamp-result" class="stage success-stage" hidden aria-labelledby="timestamp-heading">
-          <div class="success-mark" aria-hidden="true">✓</div>
+          <div class="success-mark" aria-hidden="true"></div>
           <div class="stage-heading">
             <div>
               <p class="ok">Timestamp proof created</p>
