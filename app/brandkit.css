@@ -334,8 +334,18 @@ button,
 }
 
 .limitation {
+  border-left: 0;
   border-radius: 8px;
   background: var(--ps-blue);
+  color: var(--ps-white);
+}
+
+.limitation strong {
+  color: var(--ps-white);
+}
+
+.explanation .limitation p {
+  color: rgba(255, 255, 255, .82);
 }
 
 .site-footer {
