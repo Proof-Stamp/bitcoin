@@ -3,7 +3,18 @@ import { readdir, readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { BROWSER_CONNECT_ORIGINS } from '../src/network-policy.js'
 
-const appFiles = ['index.html', 'styles.css', 'app.js', 'verify-ux.js', 'proofstamp-logo.svg', '_headers']
+const appFiles = [
+  'index.html',
+  'brand-tokens.css',
+  'styles.css',
+  'brandkit.css',
+  'app.js',
+  'verify-ux.js',
+  'proofstamp-logo.svg',
+  'proofstamp-icon.svg',
+  'proof-point-card-marker.svg',
+  '_headers',
+]
 const copiedSourceFiles = [
   'manifest-v1.js',
   'local-hash.js',
@@ -77,10 +88,18 @@ test('static HTML keeps mobile viewport, live status regions, explicit labels, a
   assert.doesNotMatch(html, /<link[^>]+href="https?:\/\//i)
 })
 
-test('header brand uses the local official ProofStamp logo asset', async () => {
-  const css = await text(new URL('../dist/styles.css', import.meta.url))
+test('header brand uses canonical ProofStamp brandkit assets', async () => {
+  const brandCss = await text(new URL('../dist/brandkit.css', import.meta.url))
+  const tokens = await text(new URL('../dist/brand-tokens.css', import.meta.url))
   const logo = await text(new URL('../dist/proofstamp-logo.svg', import.meta.url))
-  assert.match(css, /proofstamp-logo\.svg/)
-  assert.match(logo, /viewBox="0 0 740 740"/)
-  assert.match(logo, /fill="#162d52"/)
+  const marker = await text(new URL('../dist/proof-point-card-marker.svg', import.meta.url))
+  const icon = await text(new URL('../dist/proofstamp-icon.svg', import.meta.url))
+
+  assert.match(brandCss, /proofstamp-logo\.svg/)
+  assert.match(brandCss, /proof-point-card-marker\.svg/)
+  assert.match(tokens, /--ps-blue: #162D52/)
+  assert.match(logo, /viewBox="0 0 7957\.8 754\.0"/)
+  assert.match(logo, /fill="#162D52"/)
+  assert.match(marker, /stroke="#162D52"/)
+  assert.match(icon, /fill="#162D52"/)
 })

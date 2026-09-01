@@ -11,7 +11,7 @@ const styles = await readFile(new URL('../app/styles.css', import.meta.url), 'ut
 const headers = await readFile(new URL('../app/_headers', import.meta.url), 'utf8')
 
 test('browser UI keeps direct file timestamping local and pending semantics explicit', () => {
-  assert.match(index, /Timestamp or verify a file/)
+  assert.match(index, /ProofStamp a file with Bitcoin/)
   assert.match(index, /id="file"[^>]*type="file"/)
   assert.doesNotMatch(index, /id="description"/)
   assert.doesNotMatch(index, /include-metadata/)

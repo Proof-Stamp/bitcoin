@@ -1,0 +1,406 @@
+/* ProofStamp brandkit v1.1 alignment for the OpenTimestamps / Bitcoin app. */
+
+:root {
+  --navy: var(--ps-blue);
+  --navy-soft: var(--ps-blue-hover);
+  --green: var(--ps-blue);
+  --green-dark: var(--ps-blue-hover);
+  --green-pale: var(--ps-tint);
+  --cream: var(--ps-white);
+  --paper: var(--ps-white);
+  --ink: var(--ps-graphite);
+  --muted: var(--ps-muted);
+  --line: var(--ps-border);
+  --danger: var(--ps-danger);
+  --danger-pale: #FDF1F0;
+  --shadow: 0 10px 30px rgba(22, 45, 82, .07);
+  font-family: var(--ps-font-sans);
+  background: var(--ps-white);
+  color: var(--ps-graphite);
+}
+
+body,
+button,
+input,
+textarea {
+  font-family: var(--ps-font-sans);
+}
+
+body {
+  background: var(--ps-white);
+  color: var(--ps-graphite);
+}
+
+code,
+pre,
+.inline-details code,
+.details code {
+  font-family: var(--ps-font-mono);
+}
+
+.site-header {
+  min-height: 78px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--ps-border);
+}
+
+.brand {
+  gap: .72rem;
+  color: var(--ps-blue);
+}
+
+.brand-mark {
+  width: 190px;
+  height: 22px;
+  flex: 0 0 190px;
+  background: url('./proofstamp-logo.svg') left center / contain no-repeat;
+}
+
+.brand-copy strong {
+  display: none;
+}
+
+.brand-copy small {
+  margin: 0;
+  color: var(--ps-muted);
+  font-size: .74rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+main {
+  padding-bottom: 1.5rem;
+}
+
+.hero {
+  max-width: 880px;
+  margin: 3.2rem auto 1.8rem;
+  padding: 0;
+  text-align: left;
+}
+
+.hero h1 {
+  max-width: 760px;
+  margin: 0 0 .75rem;
+  color: var(--ps-blue);
+  font-family: var(--ps-font-sans);
+  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+
+.hero > p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ps-muted);
+  font-size: 1.02rem;
+}
+
+.trust-list {
+  justify-content: flex-start;
+  gap: .45rem .85rem;
+  margin-top: 1.15rem;
+  color: var(--ps-muted);
+  font-size: .82rem;
+  font-weight: 500;
+}
+
+.trust-list li + li::before {
+  content: '·';
+  margin-right: .85rem;
+  color: var(--ps-border);
+}
+
+.tool-shell {
+  width: min(880px, calc(100% - 2rem));
+  margin-bottom: 4rem;
+  border: 1px solid var(--ps-border);
+  border-radius: 12px;
+  background: var(--ps-white);
+  box-shadow: var(--shadow);
+}
+
+.tabs {
+  border-bottom-color: var(--ps-border);
+  background: var(--ps-surface);
+}
+
+.tab {
+  color: var(--ps-muted);
+  font-weight: 600;
+}
+
+#mode-create:checked ~ .tabs label[for="mode-create"],
+#mode-verify:checked ~ .tabs label[for="mode-verify"] {
+  color: var(--ps-blue);
+  border-bottom-color: var(--ps-blue);
+  background: var(--ps-white);
+}
+
+#mode-create:focus-visible ~ .tabs label[for="mode-create"],
+#mode-verify:focus-visible ~ .tabs label[for="mode-verify"] {
+  outline-color: rgba(22, 45, 82, .24);
+}
+
+.panel,
+.result-stage {
+  padding: 2rem;
+}
+
+.stage + .stage,
+.result-stage {
+  border-color: var(--ps-border);
+}
+
+.stage-kicker {
+  color: var(--ps-blue);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .11em;
+}
+
+h2,
+.verify-file-field > span,
+.verification-check strong {
+  color: var(--ps-blue);
+}
+
+h2 {
+  font-family: var(--ps-font-sans);
+  font-weight: 600;
+}
+
+.stage-subcopy,
+.verify-intro p,
+.explanation p,
+.success-intro,
+.field small,
+.privacy-note,
+.warning-note {
+  color: var(--ps-muted);
+}
+
+input[type=file],
+textarea {
+  border-color: var(--ps-border);
+  border-radius: 8px;
+  background: var(--ps-white);
+  color: var(--ps-graphite);
+}
+
+input[type=file]::file-selector-button {
+  border-radius: 6px;
+  background: var(--ps-tint);
+  color: var(--ps-blue);
+  font-weight: 600;
+}
+
+input[type=file]:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(22, 45, 82, .16);
+  border-color: var(--ps-blue);
+}
+
+button,
+.primary,
+.secondary,
+.text-button {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.primary {
+  background: var(--ps-blue);
+  color: var(--ps-white);
+  box-shadow: none;
+}
+
+.primary:hover {
+  background: var(--ps-blue-hover);
+  transform: none;
+}
+
+.secondary {
+  border-color: var(--ps-border);
+  background: var(--ps-white);
+  color: var(--ps-blue);
+}
+
+.secondary:hover {
+  border-color: var(--ps-blue);
+}
+
+.text-button,
+.text-link,
+.inline-details summary,
+.advanced-details > summary,
+.nested-details > summary,
+.independent-details > summary {
+  color: var(--ps-blue);
+}
+
+.hash-status {
+  border: 1px solid var(--ps-border);
+  border-radius: 8px;
+  background: var(--ps-tint);
+  color: var(--ps-blue);
+}
+
+.inline-details code {
+  border-top-color: rgba(22, 45, 82, .16);
+}
+
+.ok {
+  color: var(--ps-success);
+}
+
+.badge {
+  border-color: var(--ps-border);
+  background: var(--ps-surface);
+  color: var(--ps-muted);
+  font-weight: 600;
+}
+
+#timestamp-badge,
+#verification-badge {
+  border-color: rgba(138, 90, 0, .26);
+  background: #FFF8E8;
+  color: var(--ps-warning);
+}
+
+.advanced-details,
+.verify-file-field,
+.share-note,
+.verification-check {
+  border-color: var(--ps-border);
+  border-radius: 8px;
+}
+
+.advanced-details,
+.verify-file-field,
+.result-stage {
+  background: var(--ps-surface);
+}
+
+.share-note,
+.verification-check {
+  background: var(--ps-white);
+}
+
+.success-mark {
+  width: 42px;
+  height: 42px;
+  margin-bottom: .85rem;
+  border-radius: 0;
+  background: url('./proof-point-card-marker.svg') center / contain no-repeat;
+  color: transparent;
+  font-size: 0;
+}
+
+.warning-note strong,
+.bitcoin-pending-guidance {
+  color: var(--ps-warning);
+}
+
+.verification-check-icon.verified {
+  background: #EEF6F1;
+  color: var(--ps-success);
+}
+
+.verification-check-icon.pending {
+  background: #FFF8E8;
+  color: var(--ps-warning);
+}
+
+.verification-check-icon.neutral {
+  background: var(--ps-surface);
+  color: var(--ps-muted);
+}
+
+.verify-panel.mismatch-active #saved-status {
+  border-color: rgba(166, 58, 50, .28);
+  background: #FDF1F0;
+  color: var(--ps-danger);
+}
+
+.explanation {
+  max-width: 880px;
+}
+
+.explanation-number {
+  color: var(--ps-blue);
+}
+
+.limitation {
+  border-radius: 8px;
+  background: var(--ps-blue);
+}
+
+.site-footer {
+  border-top: 1px solid var(--ps-border);
+  color: var(--ps-muted);
+}
+
+.site-footer a {
+  color: var(--ps-blue);
+}
+
+.site-footer a:hover {
+  color: var(--ps-blue-hover);
+}
+
+@media (max-width: 920px) {
+  .hero {
+    width: min(880px, calc(100% - 2rem));
+  }
+}
+
+@media (max-width: 700px) {
+  .site-header {
+    min-height: 68px;
+    padding: 0 1rem;
+  }
+
+  .brand-mark {
+    width: 156px;
+    height: 19px;
+    flex-basis: 156px;
+  }
+
+  .brand-copy small {
+    font-size: .68rem;
+  }
+
+  .hero {
+    margin-top: 2.25rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.25rem, 11vw, 3.1rem);
+  }
+
+  .tool-shell {
+    width: calc(100% - 1rem);
+    border-radius: 10px;
+  }
+
+  .panel,
+  .result-stage {
+    padding: 1.2rem;
+  }
+
+  .trust-list {
+    display: grid;
+    gap: .35rem;
+  }
+
+  .trust-list li + li::before {
+    content: none;
+  }
+
+  .site-footer {
+    align-items: flex-start;
+  }
+}
